@@ -5,11 +5,48 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-#include <stdbool.h>
 #include<conio.h>
 
+
+
 // defines
+#define small_limit 20
 #define normal_limit 50
+#define high_limit 100
+#define super_high_limit 500
+#define False 0
+#define True  1
+typedef struct player player;
+typedef struct leader leader;
+typedef struct team team;
+
+// structures
+struct player
+{
+    int value;
+    int id;
+    char name[normal_limit];
+    int attack;
+    int defenece;
+    char team[100];
+};
+
+struct leader
+{
+    char username[normal_limit];
+    char password[normal_limit];
+    char email[normal_limit];
+};
+
+struct team
+{
+    int budget;
+    int id;
+    struct leader teamleader;
+    char name[high_limit];
+    struct player members[8];
+
+} deffault_value = { 100 };
 
 
 // function declration
@@ -29,6 +66,7 @@ void fixtures();
 void upcomingOpponent();
 void changePassword();
 void normalUserLanding();
+void fileOpener();
 
 // main func
 int main() {
@@ -37,7 +75,7 @@ int main() {
 }
 
 
-// functions
+// long functions
 void clearScreen() {
     system("cls");
 }
@@ -48,7 +86,7 @@ void normalUserLanding() {
     clearScreen();
     printf("Choose an option:\n1. Buy player\n2. Sell player\n3. Select team/submit team\n4. Show scoreboard\n5. Fixtures\n6. Upcoming opponent\n7. Change password\n8. Exit\n");
     int userInput = 0;
-    while (1) {
+    while (True) {
         scanf("%d", &userInput);
         if (userInput == 1) {
             buyPlayer();
@@ -88,7 +126,20 @@ void normalUserLanding() {
     }
 }
 void addTeam() {
-    printf("Successfully worked! clicked Item: 1\n");
+    clearScreen();
+    FILE* file;
+    file = fopen("teamcounter.txt", "r+");
+    fseek(file, SEEK_END, 0);
+    int teamNumber = ftell(file);
+    team newTeam = deffault_value;
+    printf("Enter your team name:\n");
+    scanf("%s", newTeam.name);
+    printf("Enter leader email: (next time you should login with this as your username)\n");
+    scanf("%s", newTeam.teamleader.email);
+    newTeam.id = teamNumber + 1;
+    putc('Q', file);
+    fclose(file);
+
 }
 void addPlayer() {
     printf("Successfully worked! clicked Item: 2\n");
@@ -121,6 +172,13 @@ void login() {
 }
 void mainPageLanding() {
     clearScreen();
+    // make essential files ready
+    fileOpener("leaders.txt");
+    fileOpener("teams.txt");
+    fileOpener("players.txt");
+    fileOpener("config.txt");
+    fileOpener("teamcounter.txt");
+    // end
     printf("Welcome sir, choose options below\n1- Login\n2- Forgot password\n3- Exit\n");
     while (1) {
         int userInput = 0;
@@ -200,4 +258,15 @@ void upcomingOpponent() {
 }
 void changePassword() {
     printf("Succesfully clicked on button 7");
+}
+
+
+// short functions
+void fileOpener(char FileName[30]) {
+    FILE* file;
+    file = fopen(FileName, "r+");
+    if (!file) {
+        file = fopen(FileName, "w+");
+    }
+    fclose(file);
 }
