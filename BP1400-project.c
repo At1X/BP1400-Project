@@ -49,6 +49,7 @@ struct team
 } deffault_value = { 100 };
 
 
+
 // function declration
 void mainPageLanding();
 void adminPageLanding();
@@ -67,6 +68,10 @@ void upcomingOpponent();
 void changePassword();
 void normalUserLanding();
 void fileOpener();
+int teamCounter();
+int emailUniqueChecker();
+int usernameUniqueChecker();
+
 
 // main func
 int main() {
@@ -127,25 +132,45 @@ void normalUserLanding() {
 }
 void addTeam() {
     clearScreen();
-    FILE* file;
-    file = fopen("teamcounter.txt", "r+");
-    fseek(file, SEEK_END, 0);
+    FILE *file,*teams;
+    file = fopen("teamcounter.txt", "a");
+    fseek(file, 0, SEEK_END);
     int teamNumber = ftell(file);
     team newTeam = deffault_value;
     printf("Enter your team name:\n");
     scanf("%s", newTeam.name);
     printf("Enter leader email: (next time you should login with this as your username)\n");
-    scanf("%s", newTeam.teamleader.email);
+    while (True) {
+        scanf("%s", newTeam.teamleader.email);
+        if (emailUniqueChecker(newTeam.teamleader.email, newTeam) == 0)
+            printf("Somebody used your email, try again...\n");
+        else {
+            printf("Succesfully added.\n");
+            break;
+        }
+    }
     newTeam.id = teamNumber + 1;
-    putc('Q', file);
+    strcpy(newTeam.teamleader.username, newTeam.teamleader.email);
+    strcpy(newTeam.teamleader.password, newTeam.teamleader.email);
+    putc('Q', file);    // for counting teams
     fclose(file);
-
+    teams = fopen("teams.txt", "a+");
+    fwrite(&newTeam, sizeof(newTeam), 1, teams);
+    fclose(teams);
 }
 void addPlayer() {
     printf("Successfully worked! clicked Item: 2\n");
 }
 void showTeams() {
-    printf("Successfully worked! clicked Item: 3\n");
+    FILE *file;
+    file = fopen("teams.txt", "r");
+    team myteam;
+    for (int i = 0; i < teamCounter(); i++)
+    {
+        fread(&myteam, sizeof(myteam), 1, file);
+        printf("ID: %d | Budget: %d | Name: %s\nLeader Informations\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+    }
+    fclose(file);
 }
 void showPlayers() {
     printf("Successfully worked! clicked Item: 4\n");
@@ -269,4 +294,44 @@ void fileOpener(char FileName[30]) {
         file = fopen(FileName, "w+");
     }
     fclose(file);
+}
+int emailUniqueChecker(char string[high_limit], team team) {
+    int count = teamCounter();
+    FILE* file;
+    int calcCounter = 0;
+    file = fopen("teams.txt", "r");
+    for (int i = 0; i < count; i++)
+    {
+        fread(&team, sizeof(team), 1, file);
+        if (strcmp(team.teamleader.email, string) == 0)
+            calcCounter++;
+    }
+    if (calcCounter == 1) {
+        return False;
+    }
+    else
+        return True;
+}
+int usernameUniqueChecker(char string[high_limit], team team) {
+    int count = teamCounter();
+    FILE* file;
+    int calcCounter = 0;
+    file = fopen("teams.txt", "r");
+    for (int i = 0; i < count; i++)
+    {
+        fread(&team, sizeof(team), 1, file);
+        if (strcmp(team.teamleader.username, string) == 0)
+            calcCounter++;
+    }
+    if (calcCounter == 1) {
+        return False;
+    }
+    else
+        return True;
+}
+int teamCounter() {
+    FILE* file;
+    file = fopen("teamcounter.txt", "r");
+    fseek(file, 0, SEEK_END);
+    return ftell(file);
 }
