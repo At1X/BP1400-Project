@@ -3,9 +3,10 @@
 
 // libraries
 #include<stdio.h>
+#include<conio.h>
 #include<stdlib.h>
 #include<string.h>
-#include<conio.h>
+#include<windows.h>
 
 
 
@@ -49,34 +50,36 @@ struct team
 
 } deffault_value = { 100 };
 
+// global variables
+int loginedTeamID = -1;
 
 
 // function declration
-void clearScreen();
-void mainPageLanding();
-void adminPageLanding();
 void login();
 void addTeam();
+void loading();
+void itemFive();
+void fixtures();
 void addPlayer();
 void showTeams();
-void showPlayers();
-void itemFive();
 void buyPlayer();
 void sellPlayer();
 void selectTeam();
-void showScoreBoard();
-void fixtures();
-void upcomingOpponent();
-void changePassword();
-void normalUserLanding();
+void showPlayers();
 void clearScreen();
+void showScoreBoard();
+void changePassword();
+void mainPageLanding();
+void adminPageLanding();
+void upcomingOpponent();
+void normalUserLanding();
 void fileOpener(char FileName[30]);
-int usernameUniqueChecker(char string[high_limit], team team);
 int teamCounter(char filename[20]);
+int usernameUniqueChecker(char string[high_limit], team team);
 
 
 
-// main func
+// main function
 int main() {
     mainPageLanding();
     return 0;
@@ -131,81 +134,137 @@ void normalUserLanding() {
     }
 }
 void addTeam() {
-    clearScreen();
-    FILE *file,*teams;
-    file = fopen("teamcounter.txt", "a");
-    fseek(file, 0, SEEK_END);
-    int teamNumber = ftell(file);
-    team newTeam = deffault_value;
-    printf("Enter your team name:\n");
     while (True) {
-        scanf("%s", newTeam.name);
-        if (usernameUniqueChecker(newTeam.name, newTeam) == 0)
-            printf("Somebody used your username, try again...\n");
-        else {      
-            printf("%s is saved for your team name!\n", newTeam.name);
+        clearScreen();
+        FILE* file, * teams;
+        file = fopen("teamcounter.txt", "a");
+        fseek(file, 0, SEEK_END);
+        int teamNumber = ftell(file);
+        team newTeam = deffault_value;
+        printf("Enter your team name:\n");
+        while (True) {
+            scanf("%s", newTeam.name);
+            if (usernameUniqueChecker(newTeam.name, newTeam) == 0)
+                printf("Somebody used your username, try again...\n");
+            else {
+                printf("%s is saved for your team name!\n", newTeam.name);
+                break;
+            }
+        }
+        printf("Enter leader email: (next time you should login with this as your username)\n");
+        scanf("%s", newTeam.teamleader.email);
+        newTeam.id = teamNumber + 1;
+        strcpy(newTeam.teamleader.username, newTeam.teamleader.email);
+        strcpy(newTeam.teamleader.password, newTeam.teamleader.email);
+        putc('Q', file);    // for counting teams
+        fclose(file);
+        teams = fopen("teams.txt", "a+");
+        fwrite(&newTeam, sizeof(newTeam), 1, teams);
+        printf("Succesfully aded!\n");
+        fclose(teams);
+        printf("Add more? (yes/no)\n");
+        char userInput[12];
+        scanf("%s", userInput);
+        if (strcmp(userInput, "yes") == 0) {
+            addTeam();
+            break;
+        }
+        else {
+            adminPageLanding();
             break;
         }
     }
-    printf("Enter leader email: (next time you should login with this as your username)\n");
-    scanf("%s", newTeam.teamleader.email);
-    newTeam.id = teamNumber + 1;
-    strcpy(newTeam.teamleader.username, newTeam.teamleader.email);
-    strcpy(newTeam.teamleader.password, newTeam.teamleader.email);
-    putc('Q', file);    // for counting teams
-    fclose(file);
-    teams = fopen("teams.txt", "a+");
-    fwrite(&newTeam, sizeof(newTeam), 1, teams);
-    printf("Succesfully aded!\n");
-    fclose(teams);
 }
 void showTeams() {
-    FILE *file;
-    file = fopen("teams.txt", "r");
-    team myteam;
-    for (int i = 0; i < teamCounter("teamcounter.txt"); i++)
-    {
-        fread(&myteam, sizeof(myteam), 1, file);
-        printf("ID: %d | Budget: %d | Name: %s\nLeader Informations\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+    while (True) {
+        FILE* file;
+        file = fopen("teams.txt", "r");
+        team myteam;
+        for (int i = 0; i < teamCounter("teamcounter.txt"); i++)
+        {
+            fread(&myteam, sizeof(myteam), 1, file);
+            printf("ID: %d | Budget: %d | Name: %s\nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+        }
+        fclose(file);
+        printf("Back? (yes/no)\n");
+        char userInput[10];
+        scanf("%s", userInput);
+        if (strcmp(userInput, "yes") == 0) {
+            adminPageLanding();
+            break;
+        }
+        else if (strcmp(userInput, "no") == 0) {
+            printf("Dude! why no? there is no more data to show, we back you to admin...\n");
+            loading();
+            adminPageLanding();
+            break;
+        }
     }
-    fclose(file);
 }
 void addPlayer() {
-    clearScreen();
-    FILE* file,*counter;
-    counter = fopen("playercounter.txt", "a");
-    fseek(counter, 0, SEEK_END);
-    int teamNumber = ftell(counter);
-    player newPlayer = def_val;
-    printf("Enter player name:\n");
-    scanf("%s", newPlayer.name);
-    printf("Enter player value:\n");
-    scanf("%d", &newPlayer.value);
-    printf("Enter player attacking power:\n");
-    scanf("%d", &newPlayer.attack);
-    printf("Enter player deffencing power:\n");
-    scanf("%d", &newPlayer.defenece);
-    newPlayer.id = teamNumber + 1;
-    putc('R', counter);
-    fclose(counter);
-    file = fopen("players.txt", "a");
-    fwrite(&newPlayer, sizeof(newPlayer), 1, file);
-    printf("player %s succesfully added\n", newPlayer.name);
-    fclose(file);
+    while (True) {
+        clearScreen();
+        FILE* file, * counter;
+        counter = fopen("playercounter.txt", "a");
+        fseek(counter, 0, SEEK_END);
+        int teamNumber = ftell(counter);
+        player newPlayer = def_val;
+        printf("Enter player name:\n");
+        scanf("%s", newPlayer.name);
+        printf("Enter player value:\n");
+        scanf("%d", &newPlayer.value);
+        printf("Enter player attacking power:\n");
+        scanf("%d", &newPlayer.attack);
+        printf("Enter player deffencing power:\n");
+        scanf("%d", &newPlayer.defenece);
+        newPlayer.id = teamNumber + 1;
+        putc('R', counter);
+        fclose(counter);
+        file = fopen("players.txt", "a");
+        fwrite(&newPlayer, sizeof(newPlayer), 1, file);
+        printf("player %s succesfully added\n", newPlayer.name);
+        fclose(file);
+        printf("Add more? (yes/no)\n");
+        char userInput[12];
+        scanf("%s", userInput);
+        if (strcmp(userInput, "yes") == 0) {
+            addPlayer();
+            break;
+        }
+        else {
+            adminPageLanding();
+            break;
+        }
+    }
 }
 void showPlayers() {
-    clearScreen();
-    printf("---------------\n");
-    FILE* file;
-    file = fopen("players.txt", "r");
-    player myplayer;
-    for (int i = 0; i < teamCounter("playercounter.txt"); i++)
-    {
-        fread(&myplayer, sizeof(myplayer), 1, file);
-        printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
+    while (True) {
+        clearScreen();
         printf("---------------\n");
+        FILE* file;
+        file = fopen("players.txt", "r");
+        player myplayer;
+        for (int i = 0; i < teamCounter("playercounter.txt"); i++)
+        {
+            fread(&myplayer, sizeof(myplayer), 1, file);
+            printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
+            printf("---------------\n");
+        }
+        fclose(file);
+        printf("Back? (yes/no)\n");
+        char userInput[10];
+        scanf("%s", userInput);
+        if (strcmp(userInput, "yes") == 0) {
+            adminPageLanding();
+            break;
+        }
+        else if (strcmp(userInput, "no") == 0) {
+            printf("Dude! why no? there is no more data to show, we back you to admin...\n");
+            loading();
+            adminPageLanding();
+            break;
+        }
     }
-    fclose(file);
 }
 void itemFive() {
     printf("Successfully worked! clicked Item: 5\n");
@@ -224,7 +283,29 @@ void login() {
         }
     }
     else {
-        normalUserLanding();
+        FILE* file,*counter;
+        team myteam = deffault_value;
+        int counterNumber = teamCounter("teamcounter.txt");
+        file = fopen("teams.txt", "r");
+        int confirm = 0;
+        for (int i = 0; i < counterNumber; i++)
+        {
+            fread(&myteam, sizeof(myteam), 1, file);
+            if (strcmp(username, myteam.teamleader.username) == 0 && strcmp(password, myteam.teamleader.password) == 0) {
+                loginedTeamID = myteam.id;
+                confirm++;
+                break;
+            }
+
+        }
+        if (confirm == 1) {
+            normalUserLanding();
+        }
+        else {
+            printf("You entered a wrong username or password, try again...\n");
+            loading();
+            mainPageLanding();
+        }
     }
 }
 void mainPageLanding() {
@@ -251,7 +332,7 @@ void mainPageLanding() {
         }
         else if (userInput == 3) {
             clearScreen();
-            printf("See you soon!");
+            printf("--------\nSee you soon!\n-------\n");
             exit(0);
         }
         else {
@@ -315,9 +396,43 @@ void upcomingOpponent() {
     printf("Succesfully clicked on button 6");
 }
 void changePassword() {
-    printf("Succesfully clicked on button 7");
-}
+    clearScreen();
+    FILE* file,*temp;
+    team myteam = deffault_value;
+    int count = teamCounter("teamcounter.txt");
+    char inputUser[normal_limit];
+    printf("if you got a \"OK\" message then you can login with your new password.\nEnter your new password:\n");
+    scanf("%s", inputUser);
+    file = fopen("teams.txt","r");
+    temp = fopen("temp.txt", "w");
 
+    for (int i = 0; i < count; i++)
+    {
+        fread(&myteam, sizeof(myteam), 1, file);
+        if (myteam.id == loginedTeamID) {
+            strcpy(myteam.teamleader.password, inputUser);
+            fwrite(&myteam, sizeof(myteam), 1, temp);
+        }
+        else {
+            fwrite(&myteam, sizeof(myteam), 1, temp);
+        }
+    }
+    fclose(file);
+    fclose(temp);
+    temp = fopen("temp.txt", "r");
+    file = fopen("teams.txt", "w");
+    for (int i = 0; i < count; i++)
+    {
+        fread(&myteam, sizeof(myteam), 1, temp);
+        fwrite(&myteam, sizeof(myteam), 1, file);
+    }
+    fclose(file);
+    fclose(temp);
+    remove("temp.txt");
+    printf("Your password successfully changed.\nYou automatically turn into menu in 3 seconds\n");
+    loading();
+    normalUserLanding();
+}
 
 // short functions
 void clearScreen() {
@@ -330,6 +445,15 @@ void fileOpener(char FileName[30]) {
         file = fopen(FileName, "w+");
     }
     fclose(file);
+}
+void loading() {
+    Sleep(1000);
+    printf("---------- 3 ----------");
+    Sleep(1000);
+    printf("\r---------- 2 ----------");
+    Sleep(1000);
+    printf("\r---------- 1 ----------");
+    Sleep(1000);
 }
 int usernameUniqueChecker(char string[high_limit], team team) {
     int count = teamCounter("teamcounter.txt");
@@ -354,3 +478,4 @@ int teamCounter(char fileName[20]) {
     fseek(file, 0, SEEK_END);
     return ftell(file);
 }
+
