@@ -43,12 +43,13 @@ struct leader
 struct team
 {
     int budget;
+    int memberNumber;
     int id;
     struct leader teamleader;
     char name[high_limit];
     struct player members[8];
 
-} deffault_value = { 100 };
+} deffault_value = { 100,0 };
 
 // global variables
 int loginedTeamID = -1;
@@ -74,8 +75,12 @@ void adminPageLanding();
 void upcomingOpponent();
 void normalUserLanding();
 void fileOpener(char FileName[30]);
-int teamCounter(char filename[20]);
+void teamFileUpdater(team changedTeam, int count);
+void playerFileUpdater(player changedPlayer, int count);
+int objectCounter(char filename[20]);
 int usernameUniqueChecker(char string[high_limit], team team);
+player playerFinder(int id);
+team teamFinder(int id);
 
 
 
@@ -180,10 +185,10 @@ void showTeams() {
         FILE* file;
         file = fopen("teams.txt", "r");
         team myteam;
-        for (int i = 0; i < teamCounter("teamcounter.txt"); i++)
+        for (int i = 0; i < objectCounter("teamcounter.txt"); i++)
         {
             fread(&myteam, sizeof(myteam), 1, file);
-            printf("ID: %d | Budget: %d | Name: %s\nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+            printf("ID: %d | Budget: %d | Members: %d |  Name: %s\nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
         }
         fclose(file);
         printf("Back? (yes/no)\n");
@@ -244,7 +249,7 @@ void showPlayers() {
         FILE* file;
         file = fopen("players.txt", "r");
         player myplayer;
-        for (int i = 0; i < teamCounter("playercounter.txt"); i++)
+        for (int i = 0; i < objectCounter("playercounter.txt"); i++)
         {
             fread(&myplayer, sizeof(myplayer), 1, file);
             printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
@@ -285,7 +290,7 @@ void login() {
     else {
         FILE* file,*counter;
         team myteam = deffault_value;
-        int counterNumber = teamCounter("teamcounter.txt");
+        int counterNumber = objectCounter("teamcounter.txt");
         file = fopen("teams.txt", "r");
         int confirm = 0;
         for (int i = 0; i < counterNumber; i++)
@@ -311,10 +316,8 @@ void login() {
 void mainPageLanding() {
     clearScreen();
     // make essential files ready
-    fileOpener("leaders.txt");
     fileOpener("teams.txt");
     fileOpener("players.txt");
-    fileOpener("config.txt");
     fileOpener("teamcounter.txt");
     fileOpener("playercounter.txt");
     // end
@@ -378,7 +381,63 @@ void adminPageLanding() {
     }
 }
 void buyPlayer() {
-    printf("Succesfully clicked on button 1");
+    while (True) {
+        clearScreen();
+        FILE* players, * teams, * temp;
+        int count = objectCounter("playercounter.txt");
+        players = fopen("players.txt", "r");
+        player myplayer = def_val;
+        team myteam = deffault_value;
+        printf("These players are Free-agent and you can buy them:\n---------------\n");
+        for (int i = 0; i < count; i++)
+        {
+            fread(&myplayer, sizeof(myplayer), 1, players);
+            if (strcmp(myplayer.team, "Free-Agent") == 0) {
+                printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
+                printf("---------------\n");
+            }
+        }
+        while (True) {
+            printf("Type player ID to buy:\n");
+            int buyId = -1;
+            while (True) {
+                scanf("%d", &buyId);
+                if (buyId > count) {
+                    printf("Not valid number, try again...\n");
+                }
+                else
+                    break;
+            }
+            myplayer = playerFinder(buyId);
+            myteam = teamFinder(loginedTeamID);
+            if (myteam.memberNumber < 8 && myteam.budget >= myplayer.value && strcmp(myplayer.team, "Free-Agent") == 0) {
+                printf("Your purchase was succesfull!\nwait...\n");
+                strcpy(myplayer.team, myteam.name);
+                myteam.budget = myteam.budget - myplayer.value;
+                myteam.members[myteam.memberNumber] = myplayer;
+                myteam.memberNumber++;
+                Sleep(2000);
+                printf("Player %s added to your team\n", myplayer.name);
+                break;
+            }
+            else {
+                printf("There is a problem with your purchase, check if you wrote a wrong ID\n");
+            }
+        }
+        // our bought player stored in myplayer
+        // our updated team details stored in myteam
+        // lets update files...
+
+        teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
+        playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+        printf("back? press enter!\n");
+        char userinput[10];
+        gets(userinput);
+        if (getchar() == '\n') {
+            normalUserLanding();
+            break;
+        }
+    }
 }
 void sellPlayer() {
     printf("Succesfully clicked on button 2");
@@ -399,11 +458,11 @@ void changePassword() {
     clearScreen();
     FILE* file,*temp;
     team myteam = deffault_value;
-    int count = teamCounter("teamcounter.txt");
+    int count = objectCounter("teamcounter.txt");
     char inputUser[normal_limit];
     printf("if you got a \"OK\" message then you can login with your new password.\nEnter your new password:\n");
     scanf("%s", inputUser);
-    file = fopen("teams.txt","r");
+    file = fopen("teams.txt", "r");
     temp = fopen("temp.txt", "w");
 
     for (int i = 0; i < count; i++)
@@ -434,7 +493,20 @@ void changePassword() {
     normalUserLanding();
 }
 
+
+
+
+
 // short functions
+void loading() {
+    Sleep(1000);
+    printf("---------- 3 ----------");
+    Sleep(1000);
+    printf("\r---------- 2 ----------");
+    Sleep(1000);
+    printf("\r---------- 1 ----------");
+    Sleep(1000);
+}
 void clearScreen() {
     system("cls");
 }
@@ -446,17 +518,64 @@ void fileOpener(char FileName[30]) {
     }
     fclose(file);
 }
-void loading() {
-    Sleep(1000);
-    printf("---------- 3 ----------");
-    Sleep(1000);
-    printf("\r---------- 2 ----------");
-    Sleep(1000);
-    printf("\r---------- 1 ----------");
-    Sleep(1000);
+void teamFileUpdater(team changedTeam, int count) {
+    FILE* teams, * temp;
+    teams = fopen("teams.txt", "r");
+    temp = fopen("temp.txt", "w");
+    team mySecondTeam = deffault_value;
+    for (int i = 0; i < count; i++)
+    {
+        fread(&mySecondTeam, sizeof(mySecondTeam), 1, teams);
+        if (mySecondTeam.id == changedTeam.id) {
+            fwrite(&changedTeam, sizeof(changedTeam), 1, temp);
+        }
+        else {
+            fwrite(&mySecondTeam, sizeof(mySecondTeam), 1, temp);
+        }
+    }
+    fclose(teams);
+    fclose(temp);
+    temp = fopen("temp.txt", "r");
+    teams = fopen("teams.txt", "w");
+    for (int i = 0; i < count; i++)
+    {
+        fread(&changedTeam, sizeof(changedTeam), 1, temp);
+        fwrite(&changedTeam, sizeof(changedTeam), 1, teams);
+    }
+    fclose(teams);
+    fclose(temp);
+    remove("temp.txt");
+}
+void playerFileUpdater(player changedPlayer, int count) {
+    FILE *players, * temp;
+    players = fopen("players.txt", "r");
+    temp = fopen("temp.txt", "w");
+    player mySecondPlayer = def_val;
+    for (int i = 0; i < count; i++)
+    {
+        fread(&mySecondPlayer, sizeof(mySecondPlayer), 1, players);
+        if (mySecondPlayer.id == changedPlayer.id) {
+            fwrite(&changedPlayer, sizeof(changedPlayer), 1, temp);
+        }
+        else {
+            fwrite(&mySecondPlayer, sizeof(mySecondPlayer), 1, temp);
+        }
+    }
+    fclose(players);
+    fclose(temp);
+    temp = fopen("temp.txt", "r");
+    players = fopen("players.txt", "w");
+    for (int i = 0; i < count; i++)
+    {
+        fread(&changedPlayer, sizeof(changedPlayer), 1, temp);
+        fwrite(&changedPlayer, sizeof(changedPlayer), 1, players);
+    }
+    fclose(players);
+    fclose(temp);
+    remove("temp.txt");
 }
 int usernameUniqueChecker(char string[high_limit], team team) {
-    int count = teamCounter("teamcounter.txt");
+    int count = objectCounter("teamcounter.txt");
     FILE* file;
     int calcCounter = 0;
     file = fopen("teams.txt", "r");
@@ -472,10 +591,35 @@ int usernameUniqueChecker(char string[high_limit], team team) {
     else
         return True;
 }
-int teamCounter(char fileName[20]) {
+int objectCounter(char fileName[20]) {
     FILE* file;
     file = fopen(fileName, "r");
     fseek(file, 0, SEEK_END);
     return ftell(file);
 }
-
+player playerFinder(int id) {
+    FILE *file;
+    file = fopen("players.txt", "r");
+    int count = objectCounter("playercounter.txt");
+    player myplayer = def_val;
+    for (int i = 0; i < count; i++)
+    {
+        fread(&myplayer, sizeof(myplayer), 1, file);
+        if (myplayer.id == id) {
+            return myplayer;
+        }
+    }
+}
+team teamFinder(int id) {
+    FILE* file;
+    file = fopen("teams.txt", "r");
+    int count = objectCounter("teamcounter.txt");
+    team myteam = deffault_value;
+    for (int i = 0; i < count; i++)
+    {
+        fread(&myteam, sizeof(myteam), 1, file);
+        if (myteam.id == id) {
+            return myteam;
+        }
+    }
+}
