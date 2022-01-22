@@ -58,6 +58,7 @@ int loginedTeamID = -1;
 
 // function declration
 void login();
+void waiter();
 void addTeam();
 void loading();
 void itemFive();
@@ -76,12 +77,14 @@ void adminPageLanding();
 void upcomingOpponent();
 void normalUserLanding();
 void fileOpener(char FileName[30]);
+void structSorter(player list[8], int s);
 void teamFileUpdater(team changedTeam, int count);
 void playerFileUpdater(player changedPlayer, int count);
 int objectCounter(char filename[20]);
 int usernameUniqueChecker(char string[high_limit], team team);
 player playerFinder(int id);
 team teamFinder(int id);
+
 
 
 
@@ -189,7 +192,7 @@ void showTeams() {
         for (int i = 0; i < objectCounter("teamcounter.txt"); i++)
         {
             fread(&myteam, sizeof(myteam), 1, file);
-            printf("ID: %d | Budget: %d | Members: %d |  Name: %s\nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+            printf("ID: %d | Budget: %d | Members: %d | Name: %s\nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
         }
         fclose(file);
         printf("Back? (yes/no)\n");
@@ -253,7 +256,7 @@ void showPlayers() {
         for (int i = 0; i < objectCounter("playercounter.txt"); i++)
         {
             fread(&myplayer, sizeof(myplayer), 1, file);
-            printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
+            printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s \n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
             printf("---------------\n");
         }
         fclose(file);
@@ -446,6 +449,7 @@ void sellPlayer() {
         FILE* players, * teams;
         team myteam = deffault_value;
         player temp = def_val;
+        strcpy(temp.team, "");
         player myplayer = def_val;
         int sellId = -1;
         myteam = teamFinder(loginedTeamID);
@@ -458,13 +462,20 @@ void sellPlayer() {
             scanf("%d", &sellId);
             myplayer = playerFinder(sellId);
             if (strcmp(myplayer.team, myteam.name) != 0) {
-                printf("Invalid ID, try again...\n");
+                printf(FRED "Invalid ID, try again...\n" RESET);
             }
             else {
                 strcpy(myplayer.team, "Free-Agent");
                 myteam.budget = myteam.budget + myplayer.value;
+                for (int i = 0; i < myteam.memberNumber; i++)
+                {
+                    if (myteam.members[i].id == sellId) {
+                        myteam.members[i] = temp;
+                    }
+                }
+                structSorter(&myteam.members, myteam.memberNumber);
                 myteam.memberNumber--;
-                myteam.members[myteam.memberNumber] = temp;
+                waiter();
                 break;
             }
 
@@ -473,6 +484,7 @@ void sellPlayer() {
         // myteam store new value of team
         teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
         playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+        printf(FGREEN "Player %s sold, %d$ added to your wallet\n" RESET , myplayer.name, myplayer.value);
         printf("back? press enter!\n");
         char userinput[10];
         gets(userinput);
@@ -491,7 +503,7 @@ void selectTeam() {
         myteam = teamFinder(loginedTeamID);
         for (int i = 0; i < myteam.memberNumber; i++)
         {
-            printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d\n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
+            printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d \n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
         }
         printf("Press Enter key...\n");
         char userinput[10];
@@ -555,6 +567,10 @@ void changePassword() {
 
 
 // short functions
+void waiter() {
+    printf("wait...\n");
+    Sleep(2000);
+}
 void loading() {
     Sleep(1000);
     printf("---------- 3 ----------");
@@ -574,6 +590,24 @@ void fileOpener(char FileName[30]) {
         file = fopen(FileName, "w+");
     }
     fclose(file);
+}
+void structSorter(player list[8], int s)
+{
+    int i, j;
+    player temp;
+
+    for (i = 0; i < s - 1; i++)
+    {
+        for (j = 0; j < (s - 1 - i); j++)
+        {
+            if (list[j].id < list[j + 1].id)
+            {
+                temp = list[j];
+                list[j] = list[j + 1];
+                list[j + 1] = temp;
+            }
+        }
+    }
 }
 void teamFileUpdater(team changedTeam, int count) {
     FILE* teams, * temp;
