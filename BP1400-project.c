@@ -22,6 +22,7 @@
 typedef struct player player;
 typedef struct leader leader;
 typedef struct team team;
+typedef struct leagueStatus lStatus;
 
 
 // structures
@@ -62,10 +63,17 @@ struct competition {
     struct team secondteam;
 } winner_value = { "None" };
 
+struct leagueStatus {
+    int week;
+    char leagueStatus[50];
+    char button[50];
+    struct team teams[4];
+
+} deffault = { 0, "inactive", "Start League"};
+
 
 // global variables
 int loginedTeamID = -1;
-char leagueStatus[20] = "inactive";
 char button[normal_limit] = "Start League";
 
 
@@ -84,6 +92,7 @@ void sellPlayer();
 void selectTeam();
 void showPlayers();
 void clearScreen();
+void startLeague();
 void showScoreBoard();
 void changePassword();
 void mainPageLanding();
@@ -91,11 +100,13 @@ void adminPageLanding();
 void upcomingOpponent();
 void normalUserLanding();
 void fileOpener(char FileName[30]);
+void arrayPrinter(int arr[], int len);
 void structSorter(player list[8], int s);
 void teamFileUpdater(team changedTeam, int count);
 void playerFileUpdater(player changedPlayer, int count);
 int usernameUniqueChecker(char string[high_limit], team team);
 int objectCounter(char filename[20]);
+int arrayChecker(int arr[], int a, int len);
 player playerFinder(int id);
 team teamFinder(int id);
 
@@ -195,7 +206,7 @@ void addTeam() {
             break;
         }
         else {
-            normalUserLanding();
+            adminPageLanding();
             break;
         }
     }
@@ -208,7 +219,7 @@ void showTeams() {
         for (int i = 0; i < objectCounter("teamcounter.txt"); i++)
         {
             fread(&myteam, sizeof(myteam), 1, file);
-            printf("ID: %d | Budget: %d | Members: %d | Name: %s\nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+            printf("ID: %d | Budget: %d | Members: %d | Name: %s | Status: %s \nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.status, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
         }
         fclose(file);
         printf("Back? (yes/no)\n");
@@ -340,6 +351,7 @@ void mainPageLanding() {
     fileOpener("players.txt");
     fileOpener("teamcounter.txt");
     fileOpener("playercounter.txt");
+    fileOpener("config.txt");
     // end
     printf("Welcome sir, choose options below\n1- Login\n2- Forgot password\n3- Exit\n");
     while (1) {
@@ -388,7 +400,7 @@ void adminPageLanding() {
             break;
         }
         else if (userInput == 5) {
-            itemFive();
+            startLeague();
             break;
         }
         else if (userInput == 6) {
@@ -436,7 +448,7 @@ void buyPlayer() {
                 myteam.budget = myteam.budget - myplayer.value;
                 myteam.members[myteam.memberNumber] = myplayer;
                 myteam.memberNumber++;
-                Sleep(2000);
+                //Sleep(2000);
                 printf(FGREEN "Player %s added to your team\n" RESET , myplayer.name);
                 break;
             }
@@ -616,7 +628,57 @@ void changePassword() {
     loading();
     normalUserLanding();
 }
+void startLeague() {
+    FILE* file, * config;
+    int replace = 0;
+    int rep = 0;
+    file = fopen("teams.txt", "rb");
+    config = fopen("config.txt", "ab+");
+    int count = objectCounter("teamcounter.txt");
+    int teamIDs[800];
+    int finalTeamList[4];
+    team myteam = deffault_value;
+    lStatus league = deffault;
+    lStatus data = deffault;
+    for (int i = 0; i < count; i++)
+    {
+        fread(&myteam, sizeof(myteam), 1, file);
+        if (myteam.memberNumber == 8) {
+            teamIDs[replace] = myteam.id;
+            replace++;
+        }
+    }
+    if (replace >= 4) {
+        printf("Wait for a seconds...\n");
+        while (rep != 4)
+        {
+            int selectedTeamForLeage = random(teamIDs, replace);
+            if (arrayChecker(finalTeamList, selectedTeamForLeage, rep) == 0) {
+                finalTeamList[rep] = selectedTeamForLeage;
+                rep++;
+            }
+        }
+        strcpy(league.leagueStatus, "Active");
+        strcpy(league.button, "Start Week 1");
+        for (int i = 0; i < 4; i++)
+        {
+            myteam = teamFinder(finalTeamList[i]);
+            league.teams[i] = myteam;
+        }
+        clearScreen();
+        fwrite(&league, sizeof(league), 1, config);
+        fclose(config);
+        config = fopen("config.txt", "r+");
+        fread(&data, sizeof(data), 1, config);
+        printf("League:\nStatus: %s\nNext Move: %s\nParticipated Teams:\n1- %s\n2- %s\n3- %s\n4- %s\n", data.leagueStatus, data.button, data.teams[0].name, data.teams[1].name, data.teams[2].name, data.teams[3].name);
+        fclose(config);
+        fclose(file);
+    }
+    else {
+        printf("Not enough teams for start a league...\n");
+    }
 
+}
 
 
 
@@ -645,6 +707,12 @@ void fileOpener(char FileName[30]) {
         file = fopen(FileName, "wb+");
     }
     fclose(file);
+}
+void arrayPrinter(int arr[], int len) {
+    for (int i = 0; i < len; i++)
+    {
+        printf("%d\n", arr[i]);
+    }
 }
 void structSorter(player list[8], int s)
 {
@@ -743,12 +811,28 @@ int objectCounter(char fileName[20]) {
     fseek(file, 0, SEEK_END);
     return ftell(file);
 }
+int arrayChecker(int arr[], int a, int len) {
+    int checker = 0;
+    for (int i = 0; i < len; i++)
+    {
+        if (arr[i] == a) {
+            checker++;
+            break;
+        }
+    }
+    if (checker == 1) {
+        return 1;
+    }
+    else
+        return 0;
+}
 int random(int arr[],int lenArr) {
     srand(time(NULL));
     int randomIndex = rand() % lenArr;
     int randomValue = arr[randomIndex];
     return randomValue;
 }
+
 player playerFinder(int id) {
     FILE *file;
     file = fopen("players.txt", "rb");
@@ -774,4 +858,4 @@ team teamFinder(int id) {
             return myteam;
         }
     }
-}   
+}  
