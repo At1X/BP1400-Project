@@ -7,6 +7,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<windows.h>
+#include"colors.h"
 
 
 
@@ -403,7 +404,7 @@ void buyPlayer() {
             while (True) {
                 scanf("%d", &buyId);
                 if (buyId > count) {
-                    printf("Not valid number, try again...\n");
+                    printf(FRED "Not valid number, try again...\n" RESET);
                 }
                 else
                     break;
@@ -417,11 +418,11 @@ void buyPlayer() {
                 myteam.members[myteam.memberNumber] = myplayer;
                 myteam.memberNumber++;
                 Sleep(2000);
-                printf("Player %s added to your team\n", myplayer.name);
+                printf(FGREEN "Player %s added to your team\n" RESET , myplayer.name);
                 break;
             }
             else {
-                printf("There is a problem with your purchase, check if you wrote a wrong ID\n");
+                printf(FRED "There is a problem with your purchase, check if you wrote a wrong ID\n" RESET);
             }
         }
         // our bought player stored in myplayer
@@ -440,10 +441,66 @@ void buyPlayer() {
     }
 }
 void sellPlayer() {
-    printf("Succesfully clicked on button 2");
+    while (True) {
+        printf("You have these choices to sell:\n-------------\n");
+        FILE* players, * teams;
+        team myteam = deffault_value;
+        player temp = def_val;
+        player myplayer = def_val;
+        int sellId = -1;
+        myteam = teamFinder(loginedTeamID);
+        for (int i = 0; i < myteam.memberNumber; i++)
+        {
+            printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d\n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
+        }
+        printf("Enter player ID to sell:\n");
+        while (True) {
+            scanf("%d", &sellId);
+            myplayer = playerFinder(sellId);
+            if (strcmp(myplayer.team, myteam.name) != 0) {
+                printf("Invalid ID, try again...\n");
+            }
+            else {
+                strcpy(myplayer.team, "Free-Agent");
+                myteam.budget = myteam.budget + myplayer.value;
+                myteam.memberNumber--;
+                myteam.members[myteam.memberNumber] = temp;
+                break;
+            }
+
+        }
+        // myplayer store new value of sold player
+        // myteam store new value of team
+        teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
+        playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+        printf("back? press enter!\n");
+        char userinput[10];
+        gets(userinput);
+        if (getchar() == '\n') {
+            normalUserLanding();
+            break;
+        }
+
+    }
+
 }
 void selectTeam() {
-    printf("Succesfully clicked on button 3");
+    while (True) {
+        printf("Your players:\n");
+        team myteam = deffault_value;
+        myteam = teamFinder(loginedTeamID);
+        for (int i = 0; i < myteam.memberNumber; i++)
+        {
+            printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d\n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
+        }
+        printf("Press Enter key...\n");
+        char userinput[10];
+        gets(userinput);
+        if (getchar() == '\n') {
+            normalUserLanding();
+            break;
+        }
+    }
 }
 void showScoreBoard() {
     printf("Succesfully clicked on button 4");
