@@ -54,6 +54,7 @@ struct team
 
 // global variables
 int loginedTeamID = -1;
+char leagueStatus[20] = "inactive";
 
 
 // function declration
@@ -100,7 +101,9 @@ void forgotPassword() {
     printf("For recover your account you have to enter your E-mail\n");
 }
 void normalUserLanding() {
+    team myteam = teamFinder(loginedTeamID);
     clearScreen();
+    printf("Wallet: %d$\n", myteam.budget);
     printf("Choose an option:\n1. Buy player\n2. Sell player\n3. Select team/submit team\n4. Show scoreboard\n5. Fixtures\n6. Upcoming opponent\n7. Change password\n8. Exit\n");
     int userInput = 0;
     while (True) {
@@ -146,7 +149,7 @@ void addTeam() {
     while (True) {
         clearScreen();
         FILE* file, * teams;
-        file = fopen("teamcounter.txt", "a");
+        file = fopen("teamcounter.txt", "ab");
         fseek(file, 0, SEEK_END);
         int teamNumber = ftell(file);
         team newTeam = deffault_value;
@@ -167,7 +170,7 @@ void addTeam() {
         strcpy(newTeam.teamleader.password, newTeam.teamleader.email);
         putc('Q', file);    // for counting teams
         fclose(file);
-        teams = fopen("teams.txt", "a+");
+        teams = fopen("teams.txt", "ab+");
         fwrite(&newTeam, sizeof(newTeam), 1, teams);
         printf("Succesfully aded!\n");
         fclose(teams);
@@ -179,7 +182,8 @@ void addTeam() {
             break;
         }
         else {
-            adminPageLanding();
+            clearScreen();
+            showTeams();
             break;
         }
     }
@@ -187,7 +191,7 @@ void addTeam() {
 void showTeams() {
     while (True) {
         FILE* file;
-        file = fopen("teams.txt", "r");
+        file = fopen("teams.txt", "rb");
         team myteam;
         for (int i = 0; i < objectCounter("teamcounter.txt"); i++)
         {
@@ -214,7 +218,7 @@ void addPlayer() {
     while (True) {
         clearScreen();
         FILE* file, * counter;
-        counter = fopen("playercounter.txt", "a");
+        counter = fopen("playercounter.txt", "ab+");
         fseek(counter, 0, SEEK_END);
         int teamNumber = ftell(counter);
         player newPlayer = def_val;
@@ -229,7 +233,7 @@ void addPlayer() {
         newPlayer.id = teamNumber + 1;
         putc('R', counter);
         fclose(counter);
-        file = fopen("players.txt", "a");
+        file = fopen("players.txt", "ab");
         fwrite(&newPlayer, sizeof(newPlayer), 1, file);
         printf("player %s succesfully added\n", newPlayer.name);
         fclose(file);
@@ -251,7 +255,7 @@ void showPlayers() {
         clearScreen();
         printf("---------------\n");
         FILE* file;
-        file = fopen("players.txt", "r");
+        file = fopen("players.txt", "rb");
         player myplayer;
         for (int i = 0; i < objectCounter("playercounter.txt"); i++)
         {
@@ -295,7 +299,7 @@ void login() {
         FILE* file,*counter;
         team myteam = deffault_value;
         int counterNumber = objectCounter("teamcounter.txt");
-        file = fopen("teams.txt", "r");
+        file = fopen("teams.txt", "rb");
         int confirm = 0;
         for (int i = 0; i < counterNumber; i++)
         {
@@ -389,7 +393,7 @@ void buyPlayer() {
         clearScreen();
         FILE* players, * teams, * temp;
         int count = objectCounter("playercounter.txt");
-        players = fopen("players.txt", "r");
+        players = fopen("players.txt", "rb");
         player myplayer = def_val;
         team myteam = deffault_value;
         printf("These players are Free-agent and you can buy them:\n---------------\n");
@@ -531,8 +535,8 @@ void changePassword() {
     char inputUser[normal_limit];
     printf("if you got a \"OK\" message then you can login with your new password.\nEnter your new password:\n");
     scanf("%s", inputUser);
-    file = fopen("teams.txt", "r");
-    temp = fopen("temp.txt", "w");
+    file = fopen("teams.txt", "rb");
+    temp = fopen("temp.txt", "wb");
 
     for (int i = 0; i < count; i++)
     {
@@ -547,8 +551,8 @@ void changePassword() {
     }
     fclose(file);
     fclose(temp);
-    temp = fopen("temp.txt", "r");
-    file = fopen("teams.txt", "w");
+    temp = fopen("temp.txt", "rb");
+    file = fopen("teams.txt", "wb");
     for (int i = 0; i < count; i++)
     {
         fread(&myteam, sizeof(myteam), 1, temp);
@@ -585,9 +589,9 @@ void clearScreen() {
 }
 void fileOpener(char FileName[30]) {
     FILE* file;
-    file = fopen(FileName, "r+");
+    file = fopen(FileName, "rb+");
     if (!file) {
-        file = fopen(FileName, "w+");
+        file = fopen(FileName, "wb+");
     }
     fclose(file);
 }
@@ -611,8 +615,8 @@ void structSorter(player list[8], int s)
 }
 void teamFileUpdater(team changedTeam, int count) {
     FILE* teams, * temp;
-    teams = fopen("teams.txt", "r");
-    temp = fopen("temp.txt", "w");
+    teams = fopen("teams.txt", "rb");
+    temp = fopen("temp.txt", "wb");
     team mySecondTeam = deffault_value;
     for (int i = 0; i < count; i++)
     {
@@ -626,8 +630,8 @@ void teamFileUpdater(team changedTeam, int count) {
     }
     fclose(teams);
     fclose(temp);
-    temp = fopen("temp.txt", "r");
-    teams = fopen("teams.txt", "w");
+    temp = fopen("temp.txt", "rb");
+    teams = fopen("teams.txt", "wb");
     for (int i = 0; i < count; i++)
     {
         fread(&changedTeam, sizeof(changedTeam), 1, temp);
@@ -639,8 +643,8 @@ void teamFileUpdater(team changedTeam, int count) {
 }
 void playerFileUpdater(player changedPlayer, int count) {
     FILE *players, * temp;
-    players = fopen("players.txt", "r");
-    temp = fopen("temp.txt", "w");
+    players = fopen("players.txt", "rb");
+    temp = fopen("temp.txt", "wb");
     player mySecondPlayer = def_val;
     for (int i = 0; i < count; i++)
     {
@@ -654,8 +658,8 @@ void playerFileUpdater(player changedPlayer, int count) {
     }
     fclose(players);
     fclose(temp);
-    temp = fopen("temp.txt", "r");
-    players = fopen("players.txt", "w");
+    temp = fopen("temp.txt", "rb");
+    players = fopen("players.txt", "wb");
     for (int i = 0; i < count; i++)
     {
         fread(&changedPlayer, sizeof(changedPlayer), 1, temp);
@@ -669,7 +673,7 @@ int usernameUniqueChecker(char string[high_limit], team team) {
     int count = objectCounter("teamcounter.txt");
     FILE* file;
     int calcCounter = 0;
-    file = fopen("teams.txt", "r");
+    file = fopen("teams.txt", "rb");
     for (int i = 0; i < count; i++)
     {
         fread(&team, sizeof(team), 1, file);
@@ -684,13 +688,13 @@ int usernameUniqueChecker(char string[high_limit], team team) {
 }
 int objectCounter(char fileName[20]) {
     FILE* file;
-    file = fopen(fileName, "r");
+    file = fopen(fileName, "rb");
     fseek(file, 0, SEEK_END);
     return ftell(file);
 }
 player playerFinder(int id) {
     FILE *file;
-    file = fopen("players.txt", "r");
+    file = fopen("players.txt", "rb");
     int count = objectCounter("playercounter.txt");
     player myplayer = def_val;
     for (int i = 0; i < count; i++)
@@ -703,7 +707,7 @@ player playerFinder(int id) {
 }
 team teamFinder(int id) {
     FILE* file;
-    file = fopen("teams.txt", "r");
+    file = fopen("teams.txt", "rb");
     int count = objectCounter("teamcounter.txt");
     team myteam = deffault_value;
     for (int i = 0; i < count; i++)
