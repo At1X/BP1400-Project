@@ -2,6 +2,7 @@
 #pragma warning(disable:4996)
 
 // libraries
+#include<time.h>
 #include<stdio.h>
 #include<conio.h>
 #include<stdlib.h>
@@ -21,6 +22,7 @@
 typedef struct player player;
 typedef struct leader leader;
 typedef struct team team;
+
 
 // structures
 struct player
@@ -45,16 +47,27 @@ struct team
 {
     int budget;
     int memberNumber;
+    char status[20];
     int id;
     struct leader teamleader;
     char name[high_limit];
     struct player members[8];
+    struct player choosenPlayers[5];
 
-} deffault_value = { 100,0 };
+} deffault_value = { 100,0,"Unready"};
+
+struct competition {
+    char winner[high_limit];
+    struct team firsteam;
+    struct team secondteam;
+} winner_value = { "None" };
+
 
 // global variables
 int loginedTeamID = -1;
 char leagueStatus[20] = "inactive";
+char button[normal_limit] = "Start League";
+
 
 
 // function declration
@@ -81,8 +94,8 @@ void fileOpener(char FileName[30]);
 void structSorter(player list[8], int s);
 void teamFileUpdater(team changedTeam, int count);
 void playerFileUpdater(player changedPlayer, int count);
-int objectCounter(char filename[20]);
 int usernameUniqueChecker(char string[high_limit], team team);
+int objectCounter(char filename[20]);
 player playerFinder(int id);
 team teamFinder(int id);
 
@@ -182,8 +195,7 @@ void addTeam() {
             break;
         }
         else {
-            clearScreen();
-            showTeams();
+            normalUserLanding();
             break;
         }
     }
@@ -504,12 +516,51 @@ void selectTeam() {
     while (True) {
         printf("Your players:\n");
         team myteam = deffault_value;
+        int teamMemberIDs[8];
+        int p1, p2, p3, p4, p5;
+        int counter = 0;
         myteam = teamFinder(loginedTeamID);
         for (int i = 0; i < myteam.memberNumber; i++)
         {
             printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d \n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
+            teamMemberIDs[i] = myteam.members[i].id;
         }
-        printf("Press Enter key...\n");
+        printf("Your selected squad is: %s, %s, %s, %s, %s\n", myteam.choosenPlayers[0].name, myteam.choosenPlayers[1].name, myteam.choosenPlayers[2].name, myteam.choosenPlayers[3].name, myteam.choosenPlayers[4].name);
+        if (myteam.memberNumber == 8) {
+            while (True) {
+                counter = 0;
+                printf("You have to select your squad for upcoming math, type 5 ID's for your squad:\n");
+                scanf("%d%d%d%d%d", &p1, &p2, &p3, &p4, &p5);
+                int typedIDs[5] = { p1,p2,p3,p4,p5 };
+                for (int i = 0; i < 5; i++)
+                {
+                    for (int j = 0; j < 8; j++)
+                    {
+                        if (typedIDs[i] == teamMemberIDs[j]) {
+                            counter++;
+                            break;
+                        }
+                    }
+                }
+                if (counter == 5) {
+                    printf("Wait until we submit your team...\n");
+                    myteam.choosenPlayers[0] = playerFinder(p1);
+                    myteam.choosenPlayers[1] = playerFinder(p2);
+                    myteam.choosenPlayers[2] = playerFinder(p3);
+                    myteam.choosenPlayers[3] = playerFinder(p4);
+                    myteam.choosenPlayers[4] = playerFinder(p5);
+                    Sleep(2000);
+                    strcpy(myteam.status, "Ready");
+                    teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
+                    printf(FGREEN "Your team with %s, %s, %s, %s, %s submited!\n" RESET, myteam.choosenPlayers[0].name, myteam.choosenPlayers[1].name, myteam.choosenPlayers[2].name, myteam.choosenPlayers[3].name, myteam.choosenPlayers[4].name);
+                    break;
+                }
+                else {
+                    printf(FRED "There is a problem with your squad, try again...\n" RESET);
+                }
+            }
+        }
+        printf("Press Enter key to back...\n");
         char userinput[10];
         gets(userinput);
         if (getchar() == '\n') {
@@ -692,6 +743,12 @@ int objectCounter(char fileName[20]) {
     fseek(file, 0, SEEK_END);
     return ftell(file);
 }
+int random(int arr[],int lenArr) {
+    srand(time(NULL));
+    int randomIndex = rand() % lenArr;
+    int randomValue = arr[randomIndex];
+    return randomValue;
+}
 player playerFinder(int id) {
     FILE *file;
     file = fopen("players.txt", "rb");
@@ -717,4 +774,4 @@ team teamFinder(int id) {
             return myteam;
         }
     }
-}
+}   
