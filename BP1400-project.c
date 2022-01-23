@@ -23,7 +23,8 @@ typedef struct player player;
 typedef struct leader leader;
 typedef struct team team;
 typedef struct leagueStatus lStatus;
-
+typedef struct weeks weeks;
+typedef struct competition competition;
 
 // structures
 struct player
@@ -65,12 +66,17 @@ struct competition {
 
 struct leagueStatus {
     int week;
-    char leagueStatus[50];
-    char button[50];
-    struct team teams[4];
+    char leagueStatus[10];
+    char button[10];
+    int participatedTeamId[4];
 
-} deffault = { 0, "inactive", "Start League"};
+} deffault = { 0, "inactive", "Start"};
 
+
+struct weeks {
+    int numberOfGames;
+    struct competition week[12];
+};
 
 // global variables
 int loginedTeamID = -1;
@@ -96,20 +102,23 @@ void startLeague();
 void showScoreBoard();
 void changePassword();
 void mainPageLanding();
+void leagueConductor();
 void adminPageLanding();
 void upcomingOpponent();
 void normalUserLanding();
+void shuffle(int* array, int n);
 void fileOpener(char FileName[30]);
 void arrayPrinter(int arr[], int len);
 void structSorter(player list[8], int s);
 void teamFileUpdater(team changedTeam, int count);
 void playerFileUpdater(player changedPlayer, int count);
 int usernameUniqueChecker(char string[high_limit], team team);
-int objectCounter(char filename[20]);
 int arrayChecker(int arr[], int a, int len);
+int objectCounter(char filename[20]);
 player playerFinder(int id);
 team teamFinder(int id);
-
+int checkIfGameHasBeenAdded(int firstTeamId, int secondTeamId, weeks hafteyeBaziHa);
+void putGamesConudctorInStructs(int week, weeks * hafteyeBaziHa);
 
 
 
@@ -119,7 +128,7 @@ int main() {
     return 0;
 }
 
-
+    
 // long functions
 void forgotPassword() {
     printf("For recover your account you have to enter your E-mail\n");
@@ -352,6 +361,7 @@ void mainPageLanding() {
     fileOpener("teamcounter.txt");
     fileOpener("playercounter.txt");
     fileOpener("config.txt");
+    fileOpener("league.txt");
     // end
     printf("Welcome sir, choose options below\n1- Login\n2- Forgot password\n3- Exit\n");
     while (1) {
@@ -503,7 +513,7 @@ void sellPlayer() {
                 }
                 structSorter(&myteam.members, myteam.memberNumber);
                 myteam.memberNumber--;
-                waiter();
+                //waiter();
                 break;
             }
 
@@ -638,12 +648,12 @@ void startLeague() {
     int teamIDs[800];
     int finalTeamList[4];
     team myteam = deffault_value;
-    lStatus league = deffault;
-    lStatus data = deffault;
+    lStatus* league = malloc(sizeof(lStatus));
+    lStatus* data = malloc(sizeof(lStatus));
     for (int i = 0; i < count; i++)
     {
-        fread(&myteam, sizeof(myteam), 1, file);
-        if (myteam.memberNumber == 8) {
+        fread(&myteam, sizeof(team), 1, file);
+        if (myteam.memberNumber == 8) { // changed data
             teamIDs[replace] = myteam.id;
             replace++;
         }
@@ -658,28 +668,66 @@ void startLeague() {
                 rep++;
             }
         }
-        strcpy(league.leagueStatus, "Active");
-        strcpy(league.button, "Start Week 1");
+        strcpy(league->leagueStatus, "Active");
+        strcpy(league->button, "Week 1");
         for (int i = 0; i < 4; i++)
         {
             myteam = teamFinder(finalTeamList[i]);
-            league.teams[i] = myteam;
+            league->participatedTeamId[i] = myteam.id;
         }
         clearScreen();
-        fwrite(&league, sizeof(league), 1, config);
+        fwrite(league, sizeof(lStatus), 1, config);
         fclose(config);
-        config = fopen("config.txt", "r+");
-        fread(&data, sizeof(data), 1, config);
-        printf("League:\nStatus: %s\nNext Move: %s\nParticipated Teams:\n1- %s\n2- %s\n3- %s\n4- %s\n", data.leagueStatus, data.button, data.teams[0].name, data.teams[1].name, data.teams[2].name, data.teams[3].name);
+        config = fopen("config.txt", "rb");
+        fread(data, sizeof(lStatus), 1, config);
+        printf("League:\nStatus: %s\nNext Move: %s\nParticipated Teams:\n1- %d\n2- %d\n3- %d\n4- %d\n", data->leagueStatus, data->button, data->participatedTeamId[0], data->participatedTeamId[1], data->participatedTeamId[2], data->participatedTeamId[3]);
         fclose(config);
         fclose(file);
+        leagueConductor();
     }
     else {
         printf("Not enough teams for start a league...\n");
     }
 
 }
+void leagueConductor() {
+    FILE* file,*leaguestatus;
+    file = fopen("config.txt", "rb");
+    leaguestatus = fopen("league.txt", "ab");
+    lStatus* league = malloc(sizeof(lStatus));
+    weeks* hafteyeBaziHa = malloc(sizeof(weeks));
+    fread(league, sizeof(lStatus), 1, file);
+    int id1 = league->participatedTeamId[0];
+    int id2 = league->participatedTeamId[1];
+    int id3 = league->participatedTeamId[2];
+    int id4 = league->participatedTeamId[3];
+    int locs[10] = { 0,1,2,3,4,5,6,7,8,9 };
+    int gameCharts[10][12][2] = {
+        {{id1,id2},{id3,id4},{id1,id3},{id2,id4},{id1,id4},{id2,id3},{id3,id1},{id4,id2},{id4,id1},{id3,id2},{id2,id1},{id4,id3}},
+        {{id1,id2},{id4,id3},{id1,id4},{id2,id3},{id1,id3},{id2,id4},{id4,id1},{id3,id2},{id2,id1},{id3,id4},{id4,id2},{id3,id1}},
+        {{id2,id1},{id3,id4},{id2,id3},{id1,id4},{id2,id4},{id1,id3},{id3,id2},{id4,id1},{id4,id2},{id3,id1},{id4,id3},{id1,id2}},
+        {{id2,id1},{id4,id3},{id2,id4},{id1,id3},{id2,id3},{id1,id4},{id4,id2},{id3,id1},{id4,id1},{id3,id2},{id1,id2},{id3,id4}},
+        {{id1,id3},{id2,id4},{id1,id2},{id3,id4},{id1,id4},{id3,id2},{id2,id1},{id4,id3},{id2,id3},{id4,id1},{id3,id1},{id4,id2}},
+        {{id1,id3},{id4,id2},{id1,id4},{id3,id2},{id1,id2},{id3,id4},{id4,id1},{id2,id3},{id2,id4},{id3,id1},{id2,id1},{id4,id3}},
+        {{id3,id1},{id2,id4},{id3,id2},{id1,id4},{id3,id4},{id1,id2},{id2,id3},{id4,id1},{id2,id1},{id4,id3},{id4,id2},{id1,id3}},
+        {{id3,id1},{id4,id2},{id3,id4},{id1,id2},{id3,id2},{id1,id4},{id4,id3},{id2,id1},{id2,id3},{id4,id1},{id2,id4},{id1,id3}},
+        {{id1,id4},{id2,id3},{id1,id2},{id4,id3},{id1,id3},{id4,id2},{id2,id1},{id3,id4},{id3,id2},{id4,id1},{id2,id4},{id3,id1}},
+        {{id4,id1},{id3,id2},{id4,id3},{id1,id2},{id4,id2},{id1,id3},{id3,id4},{id2,id1},{id2,id3},{id1,id4},{id3,id1},{id2,id4}}
+    };
 
+    int randInt = random(locs, 10);
+    for (int i = 0; i < 12; i++)
+    {
+        hafteyeBaziHa->week[i].firsteam.id = gameCharts[randInt][i][0];
+        hafteyeBaziHa->week[i].secondteam.id = gameCharts[randInt][i][1];
+
+    }
+    fwrite(hafteyeBaziHa, sizeof(weeks), 1, leaguestatus);
+    fclose(file);
+    fclose(leaguestatus);
+
+
+}
 
 
 
@@ -859,3 +907,16 @@ team teamFinder(int id) {
         }
     }
 }  
+int checkIfGameHasBeenAdded(int firstTeamId, int secondTeamId, weeks hafteyeBaziHa) {
+    int counter = 0;
+    for (int i = 0; i < 12; i++)
+    {
+        if (hafteyeBaziHa.week[i].firsteam.id == firstTeamId && hafteyeBaziHa.week[i].secondteam.id == secondTeamId) {
+            counter++;
+        }
+    }
+    if (counter == 0)
+        return 1;
+    else
+        return 0;
+}
