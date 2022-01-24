@@ -122,9 +122,10 @@ int usernameUniqueChecker(char string[high_limit], team team);
 int sellConfirmation(int sellIds, int teamID);
 int arrayChecker(int arr[], int a, int len);
 int objectCounter(char filename[20]);
-player playerFinder(int id);
+int checkIfTeamAreReady();
 team teamFinder(int id);
 lStatus configReader();
+player playerFinder(int id);
 
 
 
@@ -235,7 +236,7 @@ void showTeams() {
         for (int i = 0; i < objectCounter("teamcounter.txt"); i++)
         {
             fread(&myteam, sizeof(myteam), 1, file);
-            printf("ID: %d | Budget: %d | Members: %d | Name: %s | Status: %s \nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.status, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
+            printf("ID: %d | Budget: %d | Members: %d | Name: %s | Status: %s | Score: %d \nLeader Informations:\nUsername: %s\nPassword: %s\nE-mail: %s\n-------------\n", myteam.id, myteam.budget, myteam.memberNumber, myteam.name, myteam.status, myteam.score, myteam.teamleader.username, myteam.teamleader.password, myteam.teamleader.email);
         }
         fclose(file);
         printf("Back? (yes/no)\n");
@@ -325,21 +326,28 @@ void itemFive() {
         startLeague();
     }
     else {
-        while (True) {
-            printf("Games of new week has been started, Have a coffee!\n");
-            Sleep(5000);
-            printf(FGREEN "-----\n" RESET);
-            playGamesOfWeeks();
-            playGamesOfWeeks();
-            printf(FGREEN "-----\n" RESET);
-            printf("back? press enter!\n");
-            char userinput[10];
-            gets(userinput);
-            if (getchar() == '\n') {
-                adminPageLanding();
-                break;
+        if (checkIfTeamAreReady() == 1) {
+            while (True) {
+                printf("Games of new week has been started, Have a coffee!\n");
+                Sleep(5000);
+                printf(FGREEN "-----\n" RESET);
+                playGamesOfWeeks();
+                playGamesOfWeeks();
+                printf(FGREEN "-----\n" RESET);
+                printf("back? press enter!\n");
+                char userinput[10];
+                gets(userinput);
+                if (getchar() == '\n') {
+                    adminPageLanding();
+                    break;
+                }
             }
         }
+        else {
+            printf("All teams are not ready\nredirecting to menu...\n");
+            adminPageLanding();
+        }
+
 
     }
 }
@@ -464,7 +472,7 @@ void adminPageLanding() {
 void buyPlayer() {
     while (True) {
         lStatus config = configReader();
-        if (config.week == 8) {
+        if (config.week == 8 || config.week == 0) {
             clearScreen();
             FILE* players, * teams, * temp;
             int count = objectCounter("playercounter.txt");
@@ -493,7 +501,7 @@ void buyPlayer() {
                 }
                 myplayer = playerFinder(buyId);
                 myteam = teamFinder(loginedTeamID);
-                if (myteam.memberNumber < 8 && myteam.budget >= myplayer.value && strcmp(myplayer.team, "Free-Agent") == 0 && sellConfirmation(buyId, loginedTeamID) == 1) {
+                if (myteam.memberNumber < 8 && myteam.budget >= myplayer.value && strcmp(myplayer.team, "Free-Agent") == 0 || sellConfirmation(buyId, loginedTeamID) == 1) {
                     printf("Your purchase was succesfull!\nwait...\n");
                     strcpy(myplayer.team, myteam.name);
                     myteam.budget = myteam.budget - myplayer.value;
@@ -532,7 +540,7 @@ void buyPlayer() {
 void sellPlayer() {
     while (True) {
         lStatus config = configReader();
-        if (config.week == 8) {
+        if (config.week == 8 || config.week == 0) {
             printf("You have these choices to sell:\n-------------\n");
             FILE* players, * teams;
             team myteam = deffault_value;
@@ -549,7 +557,8 @@ void sellPlayer() {
             while (True) {
                 scanf("%d", &sellId);
                 myplayer = playerFinder(sellId);
-                if (strcmp(myplayer.team, myteam.name) != 0 && sellConfirmation(sellId,loginedTeamID) == 1) {
+                int k = sellConfirmation(sellId, loginedTeamID);
+                if (strcmp(myplayer.team, myteam.name) != 0 || k == 1) {
                     printf(FRED "Invalid ID, try again...\n" RESET);
                 }
                 else {
@@ -1036,6 +1045,22 @@ int usernameUniqueChecker(char string[high_limit], team team) {
     else
         return True;
 }
+int sellConfirmation(int sellIds, int teamID) {
+    team myteam = deffault_value;
+    myteam = teamFinder(teamID);
+    int counter = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        if (myteam.choosenPlayers[i].id == sellIds) {
+            counter++;
+        }
+    }
+    if (counter != 0) {
+        return 1;
+    }
+    else
+        return 0;
+}
 int arrayChecker(int arr[], int a, int len) {
     int checker = 0;
     for (int i = 0; i < len; i++)
@@ -1079,6 +1104,20 @@ int calcAttack(team myteam) {
     }
     return sumAttacks;
 }
+int checkIfTeamAreReady() {
+    lStatus config = configReader(); int counter = 0;
+    team myteam = deffault_value;
+    for (int i = 0; i < 4; i++)
+    {
+        myteam = teamFinder(config.participatedTeamId[i]);
+        if (strcmp(myteam.status, "Unready") == 0)
+            counter++;
+    }
+    if (counter != 0)
+        return 0;
+    else
+        return 1;
+}
 player playerFinder(int id) {
     FILE *file;
     file = fopen("players.txt", "rb");
@@ -1110,20 +1149,4 @@ lStatus configReader() {
     lStatus configs;
     fread(&configs, sizeof(lStatus), 1, conf); fclose(conf);
     return configs;
-}
-int sellConfirmation(int sellIds, int teamID) {
-    team myteam = deffault_value;
-    myteam = teamFinder(teamID);
-    int counter = 0;
-    for (int i = 0; i < 5; i++)
-    {
-        if (myteam.choosenPlayers->id == sellIds) {
-            counter++;
-        }
-    }
-    if (counter != 0) {
-        return 0;
-    }
-    else
-        return 1;
 }
