@@ -48,6 +48,7 @@ struct player
 struct team
 {
     int budget;
+    int score;
     int memberNumber;
     char status[20];
     int id;
@@ -56,7 +57,8 @@ struct team
     struct player members[8];
     struct player choosenPlayers[5];
 
-} deffault_value = { 100,0,"Unready"};
+
+} deffault_value = { 100,0,0,"Unready"};
 
 struct leagueStatus {
     int week;
@@ -119,13 +121,14 @@ int arrayChecker(int arr[], int a, int len);
 int objectCounter(char filename[20]);
 player playerFinder(int id);
 team teamFinder(int id);
+void playGamesOfWeeks();
+void weekFileUpdater(int weekNumber, competition match);
 
 
 
 // main function
 int main() {
-    //mainPageLanding();
-    showWeekData();
+    mainPageLanding();
     return 0;
 }
 
@@ -313,7 +316,9 @@ void showPlayers() {
     }
 }
 void itemFive() {
-    printf("Successfully worked! clicked Item: 5\n");
+    lStatus config = configReader();
+
+
 }
 void login() {
     char username[normal_limit];
@@ -677,6 +682,7 @@ void startLeague() {
         }
         strcpy(league->leagueStatus, "Active");
         strcpy(league->button, "Start Week 1");
+        league->week = 1;
         for (int i = 0; i < 4; i++)
         {
             myteam = teamFinder(finalTeamList[i]);
@@ -765,6 +771,49 @@ void showWeekData() {
     fclose(config);
     fclose(weekDataFile);
 }
+void playGamesOfWeeks() {
+    FILE* conf,*weekFile;
+    conf = fopen("config.txt", "rb");
+    weekFile = fopen("league.txt", "ab+");
+    lStatus config = deffault;
+    weeks* myweeks = malloc(sizeof(weeks));
+    fread(myweeks, sizeof(weeks), 1, weekFile);
+    fread(&config, sizeof(lStatus), 1, conf);
+    int whichWeekShouldPlaye = config.week;
+    int Team1Location = (whichWeekShouldPlaye * 2)-1;
+    
+    team team1,team2;
+    team1 = teamFinder(myweeks->week[whichWeekShouldPlaye-1].firsteam.id);
+    team2 = teamFinder(myweeks->week[whichWeekShouldPlaye-1].secondteam.id);
+    int firstTeamGoals = ((calcAttack(team1) - calcDeffence(team2)) / 100);
+    int secondTeamGoals = ((calcAttack(team2) - calcDeffence(team1)) / 100);
+    if (firstTeamGoals > secondTeamGoals) {
+        team1.budget += 5;
+        team2.budget += 1;
+        strcpy(myweeks->week[whichWeekShouldPlaye - 1].winner, team1.name);
+    }
+    else if (firstTeamGoals < secondTeamGoals) {
+        team1.budget += 1;
+        team2.budget += 5;
+        strcpy(myweeks->week[whichWeekShouldPlaye - 1].winner, team2.name);
+    }
+    else if (firstTeamGoals == secondTeamGoals) {
+        team1.budget += 3;
+        team2.budget += 3;
+        strcpy(myweeks->week[whichWeekShouldPlaye - 1].winner, "Equal");
+    }
+    else {
+        printf("Something went wrong...\n");
+    }
+    fclose(weekFile);
+    fclose(conf);
+    /*teamFileUpdater(team1, objectCounter("teamcounter.txt"));
+    teamFileUpdater(team2, objectCounter("teamcounter.txt"));*/
+    weekFileUpdater(whichWeekShouldPlaye - 1, myweeks->week[whichWeekShouldPlaye - 1]);
+    config.week++;
+    configFileUpdater(config);
+
+}
 
 
 
@@ -791,7 +840,7 @@ void fileOpener(char FileName[30]) {
     if (!file) {
         file = fopen(FileName, "wb+");
         if (strcmp(FileName, "config.txt") == 0) {
-            lStatus config;
+            lStatus config = deffault;
             strcpy(config.button, "Start League");
             fwrite(&config, sizeof(lStatus), 1, file);
         }
@@ -956,3 +1005,36 @@ team teamFinder(int id) {
         }
     }
 }  
+int calcAttack(team myteam) {
+    int sumAttacks = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        sumAttacks += myteam.choosenPlayers->attack;
+    }
+    return sumAttacks;
+}
+int calcDeffence(team myteam) {
+    int sumDef = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        sumDef += myteam.choosenPlayers->defenece;
+    }
+    return sumDef;
+}
+void weekFileUpdater(int weekNumber, competition match) {
+    FILE* weekFile;
+    weekFile = fopen("league.txt", "ab+");
+    weeks* week = malloc(sizeof(weeks));
+    fread(week, sizeof(weeks), 1, weekFile);
+    week->week[weekNumber] = match;
+    fclose(weekFile); 
+    weekFile = fopen("league.txt", "wb+");
+    fwrite(week, sizeof(weeks), 1, weekFile); 
+    fclose(weekFile);
+}
+lStatus configReader() {
+    FILE* conf; conf = fopen("config.txt", "ab+");
+    lStatus configs;
+    fread(&configs, sizeof(lStatus), 1, conf); fclose(conf);
+    return configs;
+}
