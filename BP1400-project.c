@@ -119,6 +119,7 @@ void teamFileUpdater(team changedTeam, int count);
 void playerFileUpdater(player changedPlayer, int count);
 void weekFileUpdater(int weekNumber, competition match);
 int usernameUniqueChecker(char string[high_limit], team team);
+int sellConfirmation(int sellIds, int teamID);
 int arrayChecker(int arr[], int a, int len);
 int objectCounter(char filename[20]);
 player playerFinder(int id);
@@ -324,12 +325,22 @@ void itemFive() {
         startLeague();
     }
     else {
-        printf("Games of new week has been started, Have a coffee!\n");
-        Sleep(5000);
-        printf(FGREEN "-----\n" RESET);
-        playGamesOfWeeks();
-        playGamesOfWeeks();
-        printf(FGREEN "-----\n" RESET);
+        while (True) {
+            printf("Games of new week has been started, Have a coffee!\n");
+            Sleep(5000);
+            printf(FGREEN "-----\n" RESET);
+            playGamesOfWeeks();
+            playGamesOfWeeks();
+            printf(FGREEN "-----\n" RESET);
+            printf("back? press enter!\n");
+            char userinput[10];
+            gets(userinput);
+            if (getchar() == '\n') {
+                adminPageLanding();
+                break;
+            }
+        }
+
     }
 }
 void login() {
@@ -452,58 +463,67 @@ void adminPageLanding() {
 }
 void buyPlayer() {
     while (True) {
-        clearScreen();
-        FILE* players, * teams, * temp;
-        int count = objectCounter("playercounter.txt");
-        players = fopen("players.txt", "rb");
-        player myplayer = def_val;
-        team myteam = deffault_value;
-        printf("These players are Free-agent and you can buy them:\n---------------\n");
-        for (int i = 0; i < count; i++)
-        {
-            fread(&myplayer, sizeof(myplayer), 1, players);
-            if (strcmp(myplayer.team, "Free-Agent") == 0) {
-                printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
-                printf("---------------\n");
-            }
-        }
-        while (True) {
-            printf("Type player ID to buy:\n");
-            int buyId = -1;
-            while (True) {
-                scanf("%d", &buyId);
-                if (buyId > count) {
-                    printf(FRED "Not valid number, try again...\n" RESET);
+        lStatus config = configReader();
+        if (config.week == 8) {
+            clearScreen();
+            FILE* players, * teams, * temp;
+            int count = objectCounter("playercounter.txt");
+            players = fopen("players.txt", "rb");
+            player myplayer = def_val;
+            team myteam = deffault_value;
+            printf("These players are Free-agent and you can buy them:\n---------------\n");
+            for (int i = 0; i < count; i++)
+            {
+                fread(&myplayer, sizeof(myplayer), 1, players);
+                if (strcmp(myplayer.team, "Free-Agent") == 0) {
+                    printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
+                    printf("---------------\n");
                 }
-                else
-                    break;
             }
-            myplayer = playerFinder(buyId);
-            myteam = teamFinder(loginedTeamID);
-            if (myteam.memberNumber < 8 && myteam.budget >= myplayer.value && strcmp(myplayer.team, "Free-Agent") == 0) {
-                printf("Your purchase was succesfull!\nwait...\n");
-                strcpy(myplayer.team, myteam.name);
-                myteam.budget = myteam.budget - myplayer.value;
-                myteam.members[myteam.memberNumber] = myplayer;
-                myteam.memberNumber++;
-                //Sleep(2000);
-                printf(FGREEN "Player %s added to your team\n" RESET , myplayer.name);
+            while (True) {
+                printf("Type player ID to buy:\n");
+                int buyId = -1;
+                while (True) {
+                    scanf("%d", &buyId);
+                    if (buyId > count) {
+                        printf(FRED "Not valid number, try again...\n" RESET);
+                    }
+                    else
+                        break;
+                }
+                myplayer = playerFinder(buyId);
+                myteam = teamFinder(loginedTeamID);
+                if (myteam.memberNumber < 8 && myteam.budget >= myplayer.value && strcmp(myplayer.team, "Free-Agent") == 0 && sellConfirmation(buyId, loginedTeamID) == 1) {
+                    printf("Your purchase was succesfull!\nwait...\n");
+                    strcpy(myplayer.team, myteam.name);
+                    myteam.budget = myteam.budget - myplayer.value;
+                    myteam.members[myteam.memberNumber] = myplayer;
+                    myteam.memberNumber++;
+                    //Sleep(2000);
+                    printf(FGREEN "Player %s added to your team\n" RESET, myplayer.name);
+                    break;
+                }
+                else {
+                    printf(FRED "There is a problem with your purchase, check if you wrote a wrong ID\n" RESET);
+                }
+            }
+            // our bought player stored in myplayer
+            // our updated team details stored in myteam
+            // lets update files...
+
+            teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
+            playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+            printf("back? press enter!\n");
+            char userinput[10];
+            gets(userinput);
+            if (getchar() == '\n') {
+                normalUserLanding();
                 break;
             }
-            else {
-                printf(FRED "There is a problem with your purchase, check if you wrote a wrong ID\n" RESET);
-            }
         }
-        // our bought player stored in myplayer
-        // our updated team details stored in myteam
-        // lets update files...
-
-        teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
-        playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
-        printf("back? press enter!\n");
-        char userinput[10];
-        gets(userinput);
-        if (getchar() == '\n') {
+        else {
+            printf("You dont have access to this page.\nredirecting to menu...\n");
+            loading();
             normalUserLanding();
             break;
         }
@@ -511,50 +531,59 @@ void buyPlayer() {
 }
 void sellPlayer() {
     while (True) {
-        printf("You have these choices to sell:\n-------------\n");
-        FILE* players, * teams;
-        team myteam = deffault_value;
-        player temp = def_val;
-        strcpy(temp.team, "");
-        player myplayer = def_val;
-        int sellId = -1;
-        myteam = teamFinder(loginedTeamID);
-        for (int i = 0; i < myteam.memberNumber; i++)
-        {
-            printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d\n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
-        }
-        printf("Enter player ID to sell:\n");
-        while (True) {
-            scanf("%d", &sellId);
-            myplayer = playerFinder(sellId);
-            if (strcmp(myplayer.team, myteam.name) != 0) {
-                printf(FRED "Invalid ID, try again...\n" RESET);
+        lStatus config = configReader();
+        if (config.week == 8) {
+            printf("You have these choices to sell:\n-------------\n");
+            FILE* players, * teams;
+            team myteam = deffault_value;
+            player temp = def_val;
+            strcpy(temp.team, "");
+            player myplayer = def_val;
+            int sellId = -1;
+            myteam = teamFinder(loginedTeamID);
+            for (int i = 0; i < myteam.memberNumber; i++)
+            {
+                printf("ID: %d | Name: %s | Attack: %d | Deffence: %d | Value: %d\n-------------\n", myteam.members[i].id, myteam.members[i].name, myteam.members[i].attack, myteam.members[i].defenece, myteam.members[i].value);
             }
-            else {
-                strcpy(myplayer.team, "Free-Agent");
-                myteam.budget = myteam.budget + myplayer.value;
-                for (int i = 0; i < myteam.memberNumber; i++)
-                {
-                    if (myteam.members[i].id == sellId) {
-                        myteam.members[i] = temp;
-                    }
+            printf("Enter player ID to sell:\n");
+            while (True) {
+                scanf("%d", &sellId);
+                myplayer = playerFinder(sellId);
+                if (strcmp(myplayer.team, myteam.name) != 0 && sellConfirmation(sellId,loginedTeamID) == 1) {
+                    printf(FRED "Invalid ID, try again...\n" RESET);
                 }
-                structSorter(&myteam.members, myteam.memberNumber);
-                myteam.memberNumber--;
-                //waiter();
+                else {
+                    strcpy(myplayer.team, "Free-Agent");
+                    myteam.budget = myteam.budget + myplayer.value;
+                    for (int i = 0; i < myteam.memberNumber; i++)
+                    {
+                        if (myteam.members[i].id == sellId) {
+                            myteam.members[i] = temp;
+                        }
+                    }
+                    structSorter(&myteam.members, myteam.memberNumber);
+                    myteam.memberNumber--;
+                    //waiter();
+                    break;
+                }
+
+            }
+            // myplayer store new value of sold player
+            // myteam store new value of team
+            teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
+            playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+            printf(FGREEN "Player %s sold, %d$ added to your wallet\n" RESET, myplayer.name, myplayer.value);
+            printf("back? press enter!\n");
+            char userinput[10];
+            gets(userinput);
+            if (getchar() == '\n') {
+                normalUserLanding();
                 break;
             }
-
         }
-        // myplayer store new value of sold player
-        // myteam store new value of team
-        teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
-        playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
-        printf(FGREEN "Player %s sold, %d$ added to your wallet\n" RESET , myplayer.name, myplayer.value);
-        printf("back? press enter!\n");
-        char userinput[10];
-        gets(userinput);
-        if (getchar() == '\n') {
+        else {
+            printf("You dont have access to this page.\nredirecting to menu...\n");
+            loading();
             normalUserLanding();
             break;
         }
@@ -667,59 +696,76 @@ void changePassword() {
     normalUserLanding();
 }
 void startLeague() {
-    FILE* file, * config;
-    int replace = 0;
-    int rep = 0;
-    file = fopen("teams.txt", "rb");
-    config = fopen("config.txt", "ab+");
-    int count = objectCounter("teamcounter.txt");
-    int teamIDs[800];
-    int finalTeamList[4];
-    team myteam = deffault_value;
-    team myteam1 = deffault_value;
-    team myteam2 = deffault_value;
-    lStatus* league = malloc(sizeof(lStatus));
-    lStatus* data = malloc(sizeof(lStatus));
-    weeks* week = malloc(sizeof(weeks));
-    for (int i = 0; i < count; i++)
-    {
-        fread(&myteam, sizeof(team), 1, file);
-        if (myteam.memberNumber == 8) { // changed data
-            teamIDs[replace] = myteam.id;
-            replace++;
-        }
-    }
-    if (replace >= 4) {
-        printf("Wait for a seconds...\n");
-        Sleep(2000);
-        clearScreen();
-        printf("Available Teams to create a league, select 4 of them:\n");
-        while (rep != replace)
+    while (True) {
+        FILE* file, * config;
+        int replace = 0;
+        int rep = 0;
+        file = fopen("teams.txt", "rb");
+        config = fopen("config.txt", "ab+");
+        int count = objectCounter("teamcounter.txt");
+        int teamIDs[800];
+        int finalTeamList[4];
+        team myteam = deffault_value;
+        team myteam1 = deffault_value;
+        team myteam2 = deffault_value;
+        lStatus* league = malloc(sizeof(lStatus));
+        lStatus* data = malloc(sizeof(lStatus));
+        weeks* week = malloc(sizeof(weeks));
+        for (int i = 0; i < count; i++)
         {
-            myteam1 = teamFinder(teamIDs[rep]);
-            printf("%d- %s\n", rep + 1, myteam1.name);
-            rep++;
+            fread(&myteam, sizeof(team), 1, file);
+            if (myteam.memberNumber == 8) { // changed data
+                teamIDs[replace] = myteam.id;
+                replace++;
+            }
         }
-        int t1, t2, t3, t4;
-        scanf("%d%d%d%d", &t1, &t2, &t3, &t4);
-        int finalTeamList[4] = {t1,t2,t3,t4};
-        strcpy(league->leagueStatus, "Active");
-        strcpy(league->button, "Start Week 1");
-        league->week = 1;
-        for (int i = 0; i < 4; i++)
-        {
-            myteam = teamFinder(finalTeamList[i]);
-            league->participatedTeamId[i] = myteam.id;
+        if (replace >= 4) {
+            printf("Wait for a seconds...\n");
+            Sleep(2000);
+            clearScreen();
+            printf("Available Teams to create a league, select 4 of them:\n");
+            while (rep != replace)
+            {
+                myteam1 = teamFinder(teamIDs[rep]);
+                printf("%d- %s\n", myteam1.id, myteam1.name);
+                rep++;
+            }
+            int t1, t2, t3, t4;
+            while (True) {
+                scanf("%d%d%d%d", &t1, &t2, &t3, &t4);
+                if (arrayChecker(teamIDs, t1, replace) == 1 && arrayChecker(teamIDs, t2, replace) == 1 && arrayChecker(teamIDs, t3, replace) == 1 && arrayChecker(teamIDs, t4, replace) == 1) {
+                    break;
+                }
+                else {
+                    printf(FRED "There is a problem with your request, try again...\n" RESET);
+                }
+            }
+            int finalTeamList[4] = { t1,t2,t3,t4 };
+            strcpy(league->leagueStatus, "Active");
+            strcpy(league->button, "Start Week 1");
+            league->week = 1;
+            for (int i = 0; i < 4; i++)
+            {
+                myteam = teamFinder(finalTeamList[i]);
+                league->participatedTeamId[i] = myteam.id;
+            }
+            clearScreen();
+            configFileUpdater(*league);
+            fclose(config);
+            fclose(file);
+            leagueConductor();
+            showWeekData();
         }
-        clearScreen();
-        configFileUpdater(*league);
-        fclose(config);
-        fclose(file);
-        leagueConductor();
-        showWeekData();
-    }
-    else {
-        printf("Not enough teams for start a league...\n");
+        else {
+            printf("Not enough teams for start a league...\n");
+        }
+        printf("back? press enter\n");
+        char userinput[10];
+        gets(userinput);
+        if (getchar() == '\n') {
+            adminPageLanding();
+            break;
+        }
     }
     
 }
@@ -1064,4 +1110,20 @@ lStatus configReader() {
     lStatus configs;
     fread(&configs, sizeof(lStatus), 1, conf); fclose(conf);
     return configs;
+}
+int sellConfirmation(int sellIds, int teamID) {
+    team myteam = deffault_value;
+    myteam = teamFinder(teamID);
+    int counter = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        if (myteam.choosenPlayers->id == sellIds) {
+            counter++;
+        }
+    }
+    if (counter != 0) {
+        return 0;
+    }
+    else
+        return 1;
 }
