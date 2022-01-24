@@ -108,6 +108,7 @@ void mainPageLanding();
 void leagueConductor();
 void adminPageLanding();
 void upcomingOpponent();
+void playGamesOfWeeks();
 void normalUserLanding();
 void shuffle(int* array, int n);
 void fileOpener(char FileName[30]);
@@ -116,19 +117,20 @@ void structSorter(player list[8], int s);
 void configFileUpdater(lStatus changedConfig);
 void teamFileUpdater(team changedTeam, int count);
 void playerFileUpdater(player changedPlayer, int count);
+void weekFileUpdater(int weekNumber, competition match);
 int usernameUniqueChecker(char string[high_limit], team team);
 int arrayChecker(int arr[], int a, int len);
 int objectCounter(char filename[20]);
 player playerFinder(int id);
 team teamFinder(int id);
-void playGamesOfWeeks();
-void weekFileUpdater(int weekNumber, competition match);
+lStatus configReader();
 
 
 
 // main function
 int main() {
     mainPageLanding();
+    //showWeekData();
     return 0;
 }
 
@@ -316,9 +318,19 @@ void showPlayers() {
     }
 }
 void itemFive() {
+    clearScreen();
     lStatus config = configReader();
-
-
+    if (config.week == 0) {
+        startLeague();
+    }
+    else {
+        printf("Games of new week has been started, Have a coffee!\n");
+        Sleep(5000);
+        printf(FGREEN "-----\n" RESET);
+        playGamesOfWeeks();
+        playGamesOfWeeks();
+        printf(FGREEN "-----\n" RESET);
+    }
 }
 void login() {
     char username[normal_limit];
@@ -396,10 +408,17 @@ void mainPageLanding() {
 void adminPageLanding() {
     clearScreen();
     int userInput = 0;
-    lStatus* config = malloc(sizeof(lStatus));
-    FILE* conf; conf = fopen("config.txt", "rb");
-    fread(config, sizeof(lStatus), 1, conf);
-    printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Log out\n",config->button);
+    char button[20];
+    lStatus config = configReader();
+    if (config.week == 0) { strcpy(button, "Start League"); }
+    else if (config.week == 1 || config.week == 2) { strcpy(button, "Start Week 1"); }
+    else if (config.week == 3 || config.week == 4) { strcpy(button, "Start Week 2"); }
+    else if (config.week == 5 || config.week == 6) { strcpy(button, "Start Week 3"); }
+    else if (config.week == 7 || config.week == 8) { strcpy(button, "Start Week 4"); }
+    else if (config.week == 9 || config.week == 10) { strcpy(button, "Start Week 5"); }
+    else if (config.week == 11 || config.week == 12) { strcpy(button, "Start Week 6"); }
+    else { strcpy(button, "**\\\\Give reward//**"); }
+    printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Log out\n",button);
     while (1) {
         scanf("%d", &userInput);
         if (userInput == 1) {
@@ -419,7 +438,7 @@ void adminPageLanding() {
             break;
         }
         else if (userInput == 5) {
-            startLeague();
+            itemFive();
             break;
         }
         else if (userInput == 6) {
@@ -657,8 +676,8 @@ void startLeague() {
     int teamIDs[800];
     int finalTeamList[4];
     team myteam = deffault_value;
-    team myteam1;
-    team myteam2;
+    team myteam1 = deffault_value;
+    team myteam2 = deffault_value;
     lStatus* league = malloc(sizeof(lStatus));
     lStatus* data = malloc(sizeof(lStatus));
     weeks* week = malloc(sizeof(weeks));
@@ -672,14 +691,18 @@ void startLeague() {
     }
     if (replace >= 4) {
         printf("Wait for a seconds...\n");
-        while (rep != 4)
+        Sleep(2000);
+        clearScreen();
+        printf("Available Teams to create a league, select 4 of them:\n");
+        while (rep != replace)
         {
-            int selectedTeamForLeage = random(teamIDs, replace);
-            if (arrayChecker(finalTeamList, selectedTeamForLeage, rep) == 0) {
-                finalTeamList[rep] = selectedTeamForLeage;
-                rep++;
-            }
+            myteam1 = teamFinder(teamIDs[rep]);
+            printf("%d- %s\n", rep + 1, myteam1.name);
+            rep++;
         }
+        int t1, t2, t3, t4;
+        scanf("%d%d%d%d", &t1, &t2, &t3, &t4);
+        int finalTeamList[4] = {t1,t2,t3,t4};
         strcpy(league->leagueStatus, "Active");
         strcpy(league->button, "Start Week 1");
         league->week = 1;
@@ -790,25 +813,29 @@ void playGamesOfWeeks() {
     if (firstTeamGoals > secondTeamGoals) {
         team1.budget += 5;
         team2.budget += 1;
+        team1.score += 3;
         strcpy(myweeks->week[whichWeekShouldPlaye - 1].winner, team1.name);
     }
     else if (firstTeamGoals < secondTeamGoals) {
         team1.budget += 1;
         team2.budget += 5;
+        team2.score += 3;
         strcpy(myweeks->week[whichWeekShouldPlaye - 1].winner, team2.name);
     }
     else if (firstTeamGoals == secondTeamGoals) {
         team1.budget += 3;
         team2.budget += 3;
+        team1.score += 1; team1.score += 1;
         strcpy(myweeks->week[whichWeekShouldPlaye - 1].winner, "Equal");
     }
     else {
         printf("Something went wrong...\n");
     }
+    printf("%s VS %s ---> Winner: %s\n",team1.name,team2.name,myweeks->week[whichWeekShouldPlaye - 1].winner);
     fclose(weekFile);
     fclose(conf);
-    /*teamFileUpdater(team1, objectCounter("teamcounter.txt"));
-    teamFileUpdater(team2, objectCounter("teamcounter.txt"));*/
+    teamFileUpdater(team1, objectCounter("teamcounter.txt"));
+    teamFileUpdater(team2, objectCounter("teamcounter.txt"));
     weekFileUpdater(whichWeekShouldPlaye - 1, myweeks->week[whichWeekShouldPlaye - 1]);
     config.week++;
     configFileUpdater(config);
@@ -935,6 +962,17 @@ void playerFileUpdater(player changedPlayer, int count) {
     fclose(temp);
     remove("temp.txt");
 }
+void weekFileUpdater(int weekNumber, competition match) {
+    FILE* weekFile;
+    weekFile = fopen("league.txt", "ab+");
+    weeks* week = malloc(sizeof(weeks));
+    fread(week, sizeof(weeks), 1, weekFile);
+    week->week[weekNumber] = match;
+    fclose(weekFile); 
+    weekFile = fopen("league.txt", "wb+");
+    fwrite(week, sizeof(weeks), 1, weekFile); 
+    fclose(weekFile);
+}
 int usernameUniqueChecker(char string[high_limit], team team) {
     int count = objectCounter("teamcounter.txt");
     FILE* file;
@@ -979,6 +1017,22 @@ int random(int arr[],int lenArr) {
     int randomValue = arr[randomIndex];
     return randomValue;
 }
+int calcDeffence(team myteam) {
+    int sumDef = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        sumDef += myteam.choosenPlayers[i].defenece;
+    }
+    return sumDef;
+}
+int calcAttack(team myteam) {
+    int sumAttacks = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        sumAttacks = sumAttacks + myteam.choosenPlayers[i].attack;
+    }
+    return sumAttacks;
+}
 player playerFinder(int id) {
     FILE *file;
     file = fopen("players.txt", "rb");
@@ -1005,33 +1059,6 @@ team teamFinder(int id) {
         }
     }
 }  
-int calcAttack(team myteam) {
-    int sumAttacks = 0;
-    for (int i = 0; i < 5; i++)
-    {
-        sumAttacks += myteam.choosenPlayers->attack;
-    }
-    return sumAttacks;
-}
-int calcDeffence(team myteam) {
-    int sumDef = 0;
-    for (int i = 0; i < 5; i++)
-    {
-        sumDef += myteam.choosenPlayers->defenece;
-    }
-    return sumDef;
-}
-void weekFileUpdater(int weekNumber, competition match) {
-    FILE* weekFile;
-    weekFile = fopen("league.txt", "ab+");
-    weeks* week = malloc(sizeof(weeks));
-    fread(week, sizeof(weeks), 1, weekFile);
-    week->week[weekNumber] = match;
-    fclose(weekFile); 
-    weekFile = fopen("league.txt", "wb+");
-    fwrite(week, sizeof(weeks), 1, weekFile); 
-    fclose(weekFile);
-}
 lStatus configReader() {
     FILE* conf; conf = fopen("config.txt", "ab+");
     lStatus configs;
