@@ -63,6 +63,7 @@ struct team
     char name[high_limit];
     struct player members[8];
     struct player choosenPlayers[5];
+    struct player backupChoosenPlayers[5];
 
 
 
@@ -117,9 +118,11 @@ void changePassword();
 void mainPageLanding();
 void leagueConductor();
 void adminPageLanding();
+void resetLeagueCache();
 void upcomingOpponent();
 void playGamesOfWeeks();
 void normalUserLanding();
+void powerReducer(int arr[5]);
 void shuffle(int* array, int n);
 void fileOpener(char FileName[30]);
 void teamSorter(team list[4], int s);
@@ -364,6 +367,45 @@ void itemFive() {
     lStatus config = configReader();
     if (config.week == 0) {
         startLeague();
+    }
+    else if (config.week == 13) {
+        showTable();
+        printf("What do you want to do now?\n1. Start a new league\n2. Do nothing and leave tha page\n");
+        char inp[2];
+        while (True) {
+            scanf("%s", inp);
+            if (strcmp(inp, "1") == 0) {
+                team myteam = deffault_value;
+                player myplayer = def_val;
+                for (int i = 0; i < 4; i++)
+                {
+                    myteam = teamFinder(config.participatedTeamId[i]);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        myteam.choosenPlayers[i] = myteam.backupChoosenPlayers[i];
+                        myplayer = playerFinder(myteam.choosenPlayers[i].id);
+                        myplayer.attack = myteam.backupChoosenPlayers[i].attack;
+                        myplayer.defenece = myteam.backupChoosenPlayers[i].defenece;
+                        playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+                    }
+                    teamFileUpdater(myteam,objectCounter("teamcounter.txt"));
+                }
+                resetLeagueCache();
+                waiter();
+                fileOpener("config.txt");
+                fileOpener("league.txt");
+                adminPageLanding();
+                break;
+            }
+            else if (strcmp(inp, "2") == 0) {
+                adminPageLanding();
+                break;
+            }
+            else {
+                printf("Not valid input...\n");
+            }
+        }
+
     }
     else {
         if (checkIfTeamAreReady() == 1) {
@@ -804,8 +846,14 @@ void startLeague() {
             for (int i = 0; i < 4; i++)
             {
                 myteam = teamFinder(finalTeamList[i]);
+                for (int i = 0; i < 5; i++)
+                {
+                    myteam.backupChoosenPlayers[i] = myteam.choosenPlayers[i];
+                }
+                teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
                 league->participatedTeamId[i] = myteam.id;
             }
+
             clearScreen();
             configFileUpdater(*league);
             fclose(config);
@@ -854,8 +902,8 @@ void leagueConductor() {
     int randInt = random(locs, 10);
     for (int i = 0; i < 12; i++)
     {
-        hafteyeBaziHa->week[i].firsteam.id = gameCharts[randInt][i][0];
-        hafteyeBaziHa->week[i].secondteam.id = gameCharts[randInt][i][1];
+        hafteyeBaziHa->week[i].firsteam = teamFinder(gameCharts[randInt][i][0]);
+        hafteyeBaziHa->week[i].secondteam = teamFinder(gameCharts[randInt][i][1]);
         strcpy(hafteyeBaziHa->week[i].winner, "None");
 
     }
@@ -950,7 +998,25 @@ void playGamesOfWeeks() {
     else {
         printf("Something went wrong...\n");
     }
+    int arr1[5] = { team1.choosenPlayers[0].id, team1.choosenPlayers[1].id,team1.choosenPlayers[2].id,team1.choosenPlayers[3].id,team1.choosenPlayers[4].id };
+    int arr2[5] = { team2.choosenPlayers[0].id, team2.choosenPlayers[1].id,team2.choosenPlayers[2].id,team2.choosenPlayers[3].id,team2.choosenPlayers[4].id };
     printf("%s VS %s ---> Winner: %s\n",team1.name,team2.name,myweeks->week[whichWeekShouldPlaye - 1].winner);
+    for (int i = 0; i < 5; i++)
+    {
+        myweeks->week[whichWeekShouldPlaye - 1].firsteam.choosenPlayers[i].attack -= 5;
+        myweeks->week[whichWeekShouldPlaye - 1].firsteam.choosenPlayers[i].defenece -= 5;
+        myweeks->week[whichWeekShouldPlaye - 1].secondteam.choosenPlayers[i].attack -= 5;
+        myweeks->week[whichWeekShouldPlaye - 1].secondteam.choosenPlayers[i].defenece -= 5;
+    }
+    for (int i = 0; i < 5; i++)
+    {
+        team1.choosenPlayers[i].attack -= 5;
+        team1.choosenPlayers[i].defenece -= 5;
+        team2.choosenPlayers[i].attack -= 5;
+        team2.choosenPlayers[i].defenece -= 5;
+    }
+    powerReducer(arr1);
+    powerReducer(arr2);
     fclose(weekFile);
     fclose(conf);
     teamFileUpdater(team1, objectCounter("teamcounter.txt"));
@@ -962,19 +1028,19 @@ void playGamesOfWeeks() {
 }
 void showTable() {
     lStatus config = configReader();
-    team myteam = deffault_value;
+    team* myteam = malloc(sizeof(team));
     team arr[4];
     int partic_team[4] = {config.participatedTeamId[0], config.participatedTeamId[1] ,config.participatedTeamId[2] ,config.participatedTeamId[3]};
     for (int i = 0; i < 4; i++)
     {
-        myteam = teamFinder(partic_team[i]);
-        arr[i] = myteam;
+        *myteam = teamFinder(partic_team[i]);
+        arr[i] = *myteam;
     }
     teamSorter(arr, 4);
     for (int i = 0; i < 4; i++)
     {
-        myteam = arr[i];
-        printf("ID: %d | Name: %s | Playes: %d | Won: %d | Drawn: %d | Lost: %d | GF: %d | GA: %d | GD: %d | Score: %d\n--------\n", myteam.id, myteam.name, myteam.played, myteam.won, myteam.drawn, myteam.lost, myteam.gol_zade, myteam.gol_khorde, myteam.tafazol, myteam.score);
+        *myteam = arr[i];
+        printf("ID: %d | Name: %s | Playes: %d | Won: %d | Drawn: %d | Lost: %d | GF: %d | GA: %d | GD: %d | Score: %d\n--------\n", myteam->id, myteam->name, myteam->played, myteam->won, myteam->drawn, myteam->lost, myteam->gol_zade, myteam->gol_khorde, myteam->tafazol, myteam->score);
     }
 
 }
@@ -994,8 +1060,41 @@ void loading() {
     printf("\r---------- 1 ----------");
     Sleep(1000);
 }
+void resetCache() {
+    remove("teams.txt");
+    remove("players.txt");
+    remove("teamcounter.txt");
+    remove("playercounter.txt");
+    remove("config.txt");
+    remove("league.txt");
+}
 void clearScreen() {
     system("cls");
+}
+void resetLeagueCache() {
+    lStatus config = configReader();
+    team myteam = deffault_value;
+    int teamids = 0;
+    for (int i = 0; i < 4; i++)
+    {
+        teamids = config.participatedTeamId[i];
+        myteam = teamFinder(teamids);
+        myteam.won = 0, myteam.gol_khorde = 0, myteam.gol_zade = 0, myteam.tafazol = 0, myteam.drawn = 0, myteam.lost = 0, myteam.won = 0, myteam.score = 0, myteam.played = 0;
+        teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
+    }
+    remove("config.txt");
+    remove("league.txt");
+}
+void powerReducer(int arr[5]) {
+    int id;
+    player myplayer = def_val;
+    for (int i = 0; i < 5; i++)
+    {
+        id = arr[i];
+        myplayer = playerFinder(id);
+        myplayer.attack -= 5; myplayer.defenece -= 5;
+        playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
+    }
 }
 void fileOpener(char FileName[30]) {
     FILE* file;
@@ -1048,6 +1147,30 @@ void teamSorter(team list[4], int s)
                 temp = list[j];
                 list[j] = list[j + 1];
                 list[j + 1] = temp;
+            }
+            else if (list[j].score == list[j + 1].score) {
+                if (list[j].tafazol < list[j + 1].tafazol)
+                {
+                    temp = list[j];
+                    list[j] = list[j + 1];
+                    list[j + 1] = temp;
+                }
+                else if (list[j].tafazol == list[j + 1].tafazol) {
+                    if (list[j].gol_zade < list[j + 1].gol_zade)
+                    {
+                        temp = list[j];
+                        list[j] = list[j + 1];
+                        list[j + 1] = temp;
+                    }
+                    else if (list[j].gol_zade == list[j + 1].gol_zade) {
+                        if (list[j].gol_khorde > list[j + 1].gol_khorde)
+                        {
+                            temp = list[j];
+                            list[j] = list[j + 1];
+                            list[j + 1] = temp;
+                        }
+                    }
+                }
             }
         }
     }
@@ -1249,11 +1372,4 @@ lStatus configReader() {
     fread(&configs, sizeof(lStatus), 1, conf); fclose(conf);
     return configs;
 }
-void resetCache() {
-    remove("teams.txt");
-    remove("players.txt");
-    remove("teamcounter.txt");
-    remove("playercounter.txt");
-    remove("config.txt");
-    remove("league.txt");
-}
+
