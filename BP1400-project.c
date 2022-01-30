@@ -247,12 +247,20 @@ void addTeam() {
             if (usernameUniqueChecker(newTeam.name, newTeam) == 0)
                 printf("Somebody used your username, try again...\n");
             else {
-                printf("%s is saved for your team name!\n", newTeam.name);
+                printf(FGREEN "%s is saved for your team name!\n" RESET , newTeam.name);
                 break;
             }
         }
         printf("Enter leader email: (next time you should login with this as your username)\n");
-        scanf("%s", newTeam.teamleader.email);
+        while (True) {
+            scanf("%s", newTeam.teamleader.email);
+            if (emailUniqueChecker(newTeam.teamleader.email, newTeam) == 0) {
+                printf(FRED "Somebody used your email, try again...\n" RESET);
+            }
+            else {
+                break;
+            }
+        }
         char myuser[50];
         strcpy(myuser,newTeam.teamleader.email);
         encode(myuser);
@@ -1535,6 +1543,23 @@ int usernameUniqueChecker(char string[high_limit], team team) {
     {
         fread(&team, sizeof(team), 1, file);
         if (strcmp(team.name, string) == 0)
+            calcCounter++;
+    }
+    if (calcCounter == 1) {
+        return False;
+    }
+    else
+        return True;
+}
+int emailUniqueChecker(char string[high_limit], team team) {
+    int count = objectCounter("teamcounter.txt");
+    FILE* file;
+    int calcCounter = 0;
+    file = fopen("teams.txt", "rb");
+    for (int i = 0; i < count; i++)
+    {
+        fread(&team, sizeof(team), 1, file);
+        if (strcmp(team.teamleader.email, string) == 0)
             calcCounter++;
     }
     if (calcCounter == 1) {
