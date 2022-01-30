@@ -48,6 +48,7 @@ struct player
 struct team
 {
     int budget;
+    int canBet;
     int score;
     int memberNumber;
     int gol_zade;
@@ -67,7 +68,7 @@ struct team
 
 
 
-} deffault_value = { 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Unready"};
+} deffault_value = { 100, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, "Unready"};
 
 struct leagueStatus {
     int week;
@@ -150,7 +151,6 @@ player playerFinder(int id);
 // main function
 int main() {
     mainPageLanding();
-    //showWeekData();
 }
 
     
@@ -481,8 +481,9 @@ void login() {
                 confirm++;
                 break;
             }
-
+            
         }
+        fclose(file);
         if (confirm == 1) {
             normalUserLanding();
         }
@@ -822,15 +823,24 @@ void selectTeam() {
     }
 }
 void showScoreBoard() {
-    lStatus config = configReader();
-    if (config.week == 0) {
-        printf(FRED "League doesnt started yet. wait till admin start a new league...\n" RESET);
-        Sleep(2000);
-        loading();
-        normalUserLanding();
-    }
-    else {
-        showTable();
+    while (True) {
+        lStatus config = configReader();
+        if (config.week == 0) {
+            printf(FRED "League doesnt started yet. wait till admin start a new league...\n" RESET);
+            Sleep(2000);
+            loading();
+            normalUserLanding();
+        }
+        else {
+            showTable();
+        }
+        printf("back? press enter!\n");
+        char userinput[10];
+        gets(userinput);
+        if (getchar() == '\n') {
+            normalUserLanding();
+            break;
+        }
     }
 }
 void fixtures() {
@@ -872,7 +882,7 @@ void upcomingOpponent() {
         lStatus config = configReader();
         weeks* myweek = malloc(sizeof(weeks));
         *myweek = weeksReader();
-        team myteam = deffault_value;
+        team myteam = deffault_value; team secondteam = deffault_value;
         int k = 0;
         int teamSelector = 0;
         if (config.week == 0) {
@@ -897,11 +907,57 @@ void upcomingOpponent() {
             }
             if (teamSelector == 1) {
                 myteam = teamFinder(myweek->week[k].firsteam.id);
+                secondteam = teamFinder(myweek->week[k].secondteam.id);
             }
             else if (teamSelector == 2) {
                 myteam = teamFinder(myweek->week[k].secondteam.id);
+                secondteam = teamFinder(myweek->week[k].firsteam.id);
             }
-            printf("Name: %s\n", myteam.name);
+            int firstTeamGoals = ((calcAttack(myteam) - calcDeffence(secondteam)) / 100);
+            int secondTeamGoals = ((calcAttack(secondteam) - calcDeffence(myteam)) / 100);
+            if (firstTeamGoals < 0) firstTeamGoals = 0;
+            if (secondTeamGoals < 0) secondTeamGoals = 0;
+            printf("\n\tName\t\tPlayes\t\tWon\t\tDrawn\t\tLost\t\tGF\t\tGA\t\tGD\t\tScore\t\t\n-------------------------------------------------------------------------------------------------------------------------------------------------\n");
+            printf("\t%s\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\n", myteam.name, myteam.played, myteam.won, myteam.drawn, myteam.lost, myteam.gol_zade, myteam.gol_khorde, myteam.tafazol, myteam.score);
+            printf("-------------------------------------------------------------------------------------------------------------------------------------------------\n");
+            while (True) {
+                if (secondteam.canBet == 1) {
+                    printf("Lets have a bet, What do you think about next game result?\n1. I won\n2. I lost\n3. Equal\n4. Exit\n");
+                    char myinp[3]; scanf("%s", myinp);
+                    if (firstTeamGoals < secondTeamGoals && strcmp(myinp, "1") == 0) {
+                        printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
+                        secondteam.budget += 1; secondteam.canBet = 0;
+                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                        break;
+                    }
+                    else if (firstTeamGoals > secondTeamGoals && strcmp(myinp, "2") == 0) {
+                        printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
+                        secondteam.budget += 1; secondteam.canBet = 0;
+                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                        break;
+                    }
+                    else if (firstTeamGoals == secondTeamGoals && strcmp(myinp, "3") == 0) {
+                        printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
+                        secondteam.budget += 1; secondteam.canBet = 0;
+                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                        break;
+                    }
+                    else if (strcmp(myinp, "4") == 0) {
+                        break;
+                    }
+                    else {
+                        printf(FRED "You choose a wrong answer, your budget decreases 2$ sho khosh\n" RESET);
+                        secondteam.canBet = 0;
+                        secondteam.budget += -2;
+                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                        break;
+                    }
+                }
+                else {
+                    printf(FRED "You had a bet before, wait for next week games\n" RESET);
+                    break;
+                }
+            }
         }
         printf("\nback? press enter!\n");
         char userinput[10];
@@ -1175,6 +1231,7 @@ void playGamesOfWeeks() {
         team2.choosenPlayers[i].attack -= 5;
         team2.choosenPlayers[i].defenece -= 5;
     }
+    team1.canBet = 1; team2.canBet = 1;
     powerReducer(arr1);
     powerReducer(arr2);
     fclose(weekFile);
