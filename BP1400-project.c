@@ -534,18 +534,18 @@ void mainPageLanding() {
     fileOpener("league.txt");
     // end
     printf("Welcome sir, choose options below\n1- Login\n2- Forgot password\n3- Exit\n");
-    while (1) {
-        int userInput = 0;
-        scanf_s("%d", &userInput);
-        if (userInput == 1) {
+    while (True) {
+        char userInput[10];
+        scanf("%s",userInput);
+        if (strcmp(userInput,"1") == 0) {
             login();
             break;
         }
-        else if (userInput == 2) {
+        else if (strcmp(userInput, "2") == 0) {
             forgotPassword();
             break;
         }
-        else if (userInput == 3) {
+        else if (strcmp(userInput, "3") == 0) {
             clearScreen();
             printf("--------\nSee you soon!\n-------\n");
             exit(0);
