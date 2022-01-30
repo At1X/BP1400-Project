@@ -102,50 +102,53 @@ void login();
 void waiter();
 void addTeam();
 void loading();
-void itemFive();
+void itemFive(); // shown in admin panel for control all league functions
 void fixtures();
 void addPlayer();
 void showTeams();
 void buyPlayer();
-void showTable();
+void showTable(); // show and update scoreboard after each game week
 void sellPlayer();
-void selectTeam();
-void resetCache();
+void selectTeam(); // select and submit team
+void resetCache(); // reset all data inlcuded all teams and players
 void showPlayers();
-void clearScreen();
+void clearScreen(); 
 void startLeague();
-void showWeekData();
+void showWeekData(); // after starting league, this function load to show all week games
 void showScoreBoard();
 void changePassword();
-void mainPageLanding();
-void leagueConductor();
-void transformWindow();
-void adminPageLanding();
-void resetLeagueCache();
+void mainPageLanding(); // first page landing
+void leagueConductor(); // create league games for 6 weeks
+void transformWindow(); // open and close transfer window
+void adminPageLanding(); 
+void resetLeagueCache(); // clear league cache
 void upcomingOpponent();
-void playGamesOfWeeks();
+void playGamesOfWeeks(); // every week call this fucntion twice
 void normalUserLanding();
-void encode(char str[50]);
-void decode(char str[50]);
-void powerReducer(int arr[5]);
-void shuffle(int* array, int n);
+void encode(char str[50]); // encode password
+void decode(char str[50]); // decode password
+void powerReducer(int arr[5]); // player power reducer after each game
+void shuffle(int* array, int n); // randomize an array
+void fileRemover(char name[50]); // remove a file data
 void fileOpener(char FileName[30]);
-void teamSorter(team list[4], int s);
-void arrayPrinter(int arr[], int len);
-void structSorter(player list[8], int s);
-void configFileUpdater(lStatus changedConfig);
-void teamFileUpdater(team changedTeam, int count);
-void playerFileUpdater(player changedPlayer, int count);
-void weekFileUpdater(int weekNumber, competition match);
-int usernameUniqueChecker(char string[high_limit], team team);
-int sellConfirmation(int sellIds, int teamID);
-int arrayChecker(int arr[], int a, int len);
-int objectCounter(char filename[20]);
+void teamSorter(team list[4], int s); // sort teams by their score 
+void arrayPrinter(int arr[], int len); // print an array
+void structSorter(player list[8], int s); // sort a struct by player value
+void configFileUpdater(lStatus changedConfig); // update config file, given changed struct
+void teamFileUpdater(team changedTeam, int count); // update team file, given changed struct
+void playerFileUpdater(player changedPlayer, int count); // update player file, given changed player struct
+void weekFileUpdater(int weekNumber, competition match); // update game results
+int usernameUniqueChecker(char string[high_limit], team team); // checks if typed username is unique
+int sellConfirmation(int sellIds, int teamID); // check some paramteres for selling players
+int arrayChecker(int arr[], int a, int len); // check if a number exist in a array
+int objectCounter(char filename[20]); // count number of teams/players
+int calcDeffence(team myteam); // calculate members attack power
+int calcAttack(team myteam); // calculate members deffence power
 int checkIfTeamAreReady();
-team teamFinder(int id);
-weeks weeksReader();
-lStatus configReader();
-player playerFinder(int id);
+team teamFinder(int id); // find a team by its ID
+weeks weeksReader(); // read week games data
+lStatus configReader(); // read config file
+player playerFinder(int id); // find a player by its ID
 
 
 // main function
@@ -352,17 +355,17 @@ void addPlayer() {
 void showPlayers() {
     while (True) {
         clearScreen();
-        printf("---------------\n");
+        printf("  ------------------------------------------------------------------------------------\n");
         FILE* file;
         file = fopen("players.txt", "rb");
         player myplayer;
-        printf("ID\tName\t\tDeffence\tAttack\t\tValue\t\tTeam\n");
-        printf("------------------------------------------------------------------------------------\n");
+        printf("  ID\t\tName\t\tDeffence\tAttack\t\tValue\t\tTeam\n");
+        printf("  ------------------------------------------------------------------------------------\n");
         for (int i = 0; i < objectCounter("playercounter.txt"); i++)
         {
             fread(&myplayer, sizeof(myplayer), 1, file);
-            printf("%d |\t%s\t|\t%d\t|\t%d\t|\t%d\t|\t%s \n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
-            printf("------------------------------------------------------------------------------------\n");
+            printf("  %d |\t\t%s\t|\t%d\t|\t%d\t|\t%d\t|\t%s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
+            printf("  ------------------------------------------------------------------------------------\n");
         }
         fclose(file);
         printf("Back? (yes/no)\n");
@@ -433,6 +436,24 @@ void itemFive() {
                 printf(FGREEN "-----\n" RESET);
                 playGamesOfWeeks();
                 playGamesOfWeeks();
+                lStatus config2 = configReader();
+                team myt = deffault_value;
+                player myp = def_val;
+                if (config2.week == 6 || config2.week == 7) {
+                    for (int i = 0; i < 4; i++)
+                    {
+                        myt = teamFinder(config2.participatedTeamId[i]);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            myt.choosenPlayers[i] = myt.backupChoosenPlayers[i];
+                            myp = playerFinder(myt.choosenPlayers[i].id);
+                            myp.attack = myt.backupChoosenPlayers[i].attack;
+                            myp.defenece = myt.backupChoosenPlayers[i].defenece;
+                            playerFileUpdater(myp, objectCounter("playercounter.txt"));
+                        }
+                        teamFileUpdater(myt, objectCounter("teamcounter.txt"));
+                    }
+                }
                 printf(FGREEN "-----\n" RESET);
                 printf(FCYAN "Updated Scoreboard:\n" RESET);
                 showTable();
@@ -469,7 +490,7 @@ void login() {
             adminPageLanding();
         }
         else {
-            printf("You entered a wrong username or password, try again...\n");
+            printf(FRED "You entered a wrong username or password, try again...\n" RESET);
             loading();
             mainPageLanding();
         }
@@ -496,7 +517,7 @@ void login() {
             normalUserLanding();
         }
         else {
-            printf("You entered a wrong username or password, try again...\n");
+            printf(FRED "You entered a wrong username or password, try again...\n" RESET);
             loading();
             mainPageLanding();
         }
@@ -551,10 +572,10 @@ void adminPageLanding() {
     else if (config.week == 13) { strcpy(button, "End Season and Announce The Champion"); }
     else { strcpy(button, "Start League"); }
     if (config.week == 7 || config.week == 8) {
-        printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Open/Close Transfer Window\n7. Log out\n8. Reset cache\n", button);
+        printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Open/Close Transfer Window\n7. Log out\n8. Clear data\n", button);
     }
     else {
-        printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Log out\n7. Reset cache\n", button);
+        printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Log out\n7. Clear data\n", button);
     }
     if (config.week == 7 || config.week == 8) {
         while (1) {
@@ -650,6 +671,7 @@ void buyPlayer() {
                 fread(&myplayer, sizeof(myplayer), 1, players);
                 arrid[i] = myplayer;
             }
+            fclose(players);
             structSorter(arrid, count);
             printf("These players are Free-agent and you can buy them:\n---------------\n");
             for (int i = 0; i < count; i++)
@@ -679,7 +701,7 @@ void buyPlayer() {
                     myteam.budget = myteam.budget - myplayer.value;
                     myteam.members[myteam.memberNumber] = myplayer;
                     myteam.memberNumber++;
-                    //Sleep(2000);
+                    Sleep(2000);
                     printf(FGREEN "Player %s added to your team\n" RESET, myplayer.name);
                     break;
                 }
@@ -702,7 +724,7 @@ void buyPlayer() {
             }
         }
         else {
-            printf("You dont have access to this page.\nredirecting to menu...\n");
+            printf(FRED "You dont have access to this page.\nredirecting to menu...\n" RESET);
             loading();
             normalUserLanding();
             break;
@@ -715,7 +737,6 @@ void sellPlayer() {
         lStatus config = configReader();
         if (config.transfer == 1) {
             printf("You have these choices to sell:\n-------------\n");
-            FILE* players, * teams;
             team myteam = deffault_value;
             player temp = def_val;
             strcpy(temp.team, "");
@@ -745,7 +766,7 @@ void sellPlayer() {
                     }
                     structSorter(&myteam.members, myteam.memberNumber);
                     myteam.memberNumber--;
-                    //waiter();
+                    waiter();
                     break;
                 }
 
@@ -764,7 +785,7 @@ void sellPlayer() {
             }
         }
         else {
-            printf("You dont have access to this page.\nredirecting to menu...\n");
+            printf(FRED "You dont have access to this page.\nredirecting to menu...\n" RESET);
             loading();
             normalUserLanding();
             break;
@@ -854,26 +875,32 @@ void showScoreBoard() {
 void fixtures() {
     while (True) {
         lStatus config = configReader();
-        weeks *myweek = malloc(sizeof(weeks));
-        *myweek = weeksReader();
-        if (config.week != 0) {
-            printf(FGREEN "Finished Games:\n" RESET);
-            for (int i = 0; i < 12; i++)
-            {
-                if ((myweek->week[i].firsteam.id == loginedTeamID || myweek->week[i].secondteam.id == loginedTeamID) && strcmp(myweek->week[i].winner,"None") != 0) {
-                    printf("%s VS %s | Winner: %s\n", myweek->week[i].firsteam.name, myweek->week[i].secondteam.name, myweek->week[i].winner);
+        int arid[4] = {config.participatedTeamId[0], config.participatedTeamId[1], config.participatedTeamId[2], config.participatedTeamId[3]};
+        if (arrayChecker(arid, loginedTeamID, 4) == 1) {
+            weeks* myweek = malloc(sizeof(weeks));
+            *myweek = weeksReader();
+            if (config.week != 0) {
+                printf(FGREEN "Finished Games:\n" RESET);
+                for (int i = 0; i < 12; i++)
+                {
+                    if ((myweek->week[i].firsteam.id == loginedTeamID || myweek->week[i].secondteam.id == loginedTeamID) && strcmp(myweek->week[i].winner, "None") != 0) {
+                        printf("%s VS %s | Winner: %s\n", myweek->week[i].firsteam.name, myweek->week[i].secondteam.name, myweek->week[i].winner);
+                    }
+                }
+                printf(FGREEN "\nUpcoming opponents:\n" RESET);
+                for (int i = config.week - 1; i < 12; i++)
+                {
+                    if (myweek->week[i].firsteam.id == loginedTeamID || myweek->week[i].secondteam.id == loginedTeamID) {
+                        printf("%s VS %s\n", myweek->week[i].firsteam.name, myweek->week[i].secondteam.name);
+                    }
                 }
             }
-            printf(FGREEN "\nUpcoming opponents:\n" RESET);
-            for (int i = config.week-1; i < 12; i++)
-            {
-                if (myweek->week[i].firsteam.id == loginedTeamID || myweek->week[i].secondteam.id == loginedTeamID) {
-                    printf("%s VS %s\n", myweek->week[i].firsteam.name, myweek->week[i].secondteam.name);
-                }
+            else {
+                printf(FRED "League doesnt started yet...\n" RESET);
             }
         }
         else {
-            printf(FRED "League doesnt started yet...\n" RESET);
+            printf(FRED "Your not participated in league" RESET);
         }
         printf("\nback? press enter!\n");
         char userinput[10];
@@ -888,85 +915,90 @@ void fixtures() {
 void upcomingOpponent() {
     while (True) {
         lStatus config = configReader();
-        weeks* myweek = malloc(sizeof(weeks));
-        *myweek = weeksReader();
-        team myteam = deffault_value; team secondteam = deffault_value;
-        int k = 0;
-        int teamSelector = 0;
-        if (config.week == 0) {
-            printf(FRED "League doesnt started yet...\n" RESET);
-            loading();
-            normalUserLanding();
-            break;
-        }
-        else {
-            for (int i = config.week - 1; i < 12; i++)
-            {
-                if (myweek->week[i].firsteam.id == loginedTeamID) {
-                    k = i;
-                    teamSelector = 2;
-                    break;
+        int arid[4] = { config.participatedTeamId[0], config.participatedTeamId[1], config.participatedTeamId[2], config.participatedTeamId[3] };
+        if (arrayChecker(arid, loginedTeamID, 4) == 1) {
+            weeks* myweek = malloc(sizeof(weeks));
+            *myweek = weeksReader();
+            team myteam = deffault_value; team secondteam = deffault_value;
+            int k = 0;
+            int teamSelector = 0;
+            if (config.week == 0) {
+                printf(FRED "League doesnt started yet...\n" RESET);
+                loading();
+                normalUserLanding();
+                break;
+            }
+            else {
+                for (int i = config.week - 1; i < 12; i++)
+                {
+                    if (myweek->week[i].firsteam.id == loginedTeamID) {
+                        k = i;
+                        teamSelector = 2;
+                        break;
+                    }
+                    else if (myweek->week[i].secondteam.id == loginedTeamID) {
+                        k = i;
+                        teamSelector = 1;
+                        break;
+                    }
                 }
-                else if (myweek->week[i].secondteam.id == loginedTeamID) {
-                    k = i;
-                    teamSelector = 1;
-                    break;
+                if (teamSelector == 1) {
+                    myteam = teamFinder(myweek->week[k].firsteam.id);
+                    secondteam = teamFinder(myweek->week[k].secondteam.id);
                 }
-            }
-            if (teamSelector == 1) {
-                myteam = teamFinder(myweek->week[k].firsteam.id);
-                secondteam = teamFinder(myweek->week[k].secondteam.id);
-            }
-            else if (teamSelector == 2) {
-                myteam = teamFinder(myweek->week[k].secondteam.id);
-                secondteam = teamFinder(myweek->week[k].firsteam.id);
-            }
-            int firstTeamGoals = ((calcAttack(myteam) - calcDeffence(secondteam)) / 100);
-            int secondTeamGoals = ((calcAttack(secondteam) - calcDeffence(myteam)) / 100);
-            if (firstTeamGoals < 0) firstTeamGoals = 0;
-            if (secondTeamGoals < 0) secondTeamGoals = 0;
-            printf("\n\tName\t\tPlayes\t\tWon\t\tDrawn\t\tLost\t\tGF\t\tGA\t\tGD\t\tScore\t\t\n-------------------------------------------------------------------------------------------------------------------------------------------------\n");
-            printf("\t%s\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\n", myteam.name, myteam.played, myteam.won, myteam.drawn, myteam.lost, myteam.gol_zade, myteam.gol_khorde, myteam.tafazol, myteam.score);
-            printf("-------------------------------------------------------------------------------------------------------------------------------------------------\n");
-            while (True) {
-                if (secondteam.canBet == 1) {
-                    printf("Lets have a bet, What do you think about next game result?\n1. I won\n2. I lost\n3. Equal\n4. Exit\n");
-                    char myinp[3]; scanf("%s", myinp);
-                    if (firstTeamGoals < secondTeamGoals && strcmp(myinp, "1") == 0) {
-                        printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
-                        secondteam.budget += 1; secondteam.canBet = 0;
-                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
-                        break;
-                    }
-                    else if (firstTeamGoals > secondTeamGoals && strcmp(myinp, "2") == 0) {
-                        printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
-                        secondteam.budget += 1; secondteam.canBet = 0;
-                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
-                        break;
-                    }
-                    else if (firstTeamGoals == secondTeamGoals && strcmp(myinp, "3") == 0) {
-                        printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
-                        secondteam.budget += 1; secondteam.canBet = 0;
-                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
-                        break;
-                    }
-                    else if (strcmp(myinp, "4") == 0) {
-                        break;
+                else if (teamSelector == 2) {
+                    myteam = teamFinder(myweek->week[k].secondteam.id);
+                    secondteam = teamFinder(myweek->week[k].firsteam.id);
+                }
+                int firstTeamGoals = ((calcAttack(myteam) - calcDeffence(secondteam)) / 100);
+                int secondTeamGoals = ((calcAttack(secondteam) - calcDeffence(myteam)) / 100);
+                if (firstTeamGoals < 0) firstTeamGoals = 0;
+                if (secondTeamGoals < 0) secondTeamGoals = 0;
+                printf("\n\tName\t\tPlayes\t\tWon\t\tDrawn\t\tLost\t\tGF\t\tGA\t\tGD\t\tScore\t\t\n-------------------------------------------------------------------------------------------------------------------------------------------------\n");
+                printf("\t%s\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\t%d\t|\n", myteam.name, myteam.played, myteam.won, myteam.drawn, myteam.lost, myteam.gol_zade, myteam.gol_khorde, myteam.tafazol, myteam.score);
+                printf("-------------------------------------------------------------------------------------------------------------------------------------------------\n");
+                while (True) {
+                    if (secondteam.canBet == 1) {
+                        printf("Lets have a bet, What do you think about next game result?\n1. I won\n2. I lost\n3. Equal\n4. Exit\n");
+                        char myinp[3]; scanf("%s", myinp);
+                        if (firstTeamGoals < secondTeamGoals && strcmp(myinp, "1") == 0) {
+                            printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
+                            secondteam.budget += 1; secondteam.canBet = 0;
+                            teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                            break;
+                        }
+                        else if (firstTeamGoals > secondTeamGoals && strcmp(myinp, "2") == 0) {
+                            printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
+                            secondteam.budget += 1; secondteam.canBet = 0;
+                            teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                            break;
+                        }
+                        else if (firstTeamGoals == secondTeamGoals && strcmp(myinp, "3") == 0) {
+                            printf(FGREEN "You choose a correct answer, 1$ added to your wallet" RESET);
+                            secondteam.budget += 1; secondteam.canBet = 0;
+                            teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                            break;
+                        }
+                        else if (strcmp(myinp, "4") == 0) {
+                            break;
+                        }
+                        else {
+                            printf(FRED "You choose a wrong answer, your budget decreases 2$ sho khosh\n" RESET);
+                            secondteam.canBet = 0;
+                            secondteam.budget += -2;
+                            teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                            break;
+                        }
                     }
                     else {
-                        printf(FRED "You choose a wrong answer, your budget decreases 2$ sho khosh\n" RESET);
-                        secondteam.canBet = 0;
-                        secondteam.budget += -2;
-                        teamFileUpdater(secondteam, objectCounter("teamcounter.txt"));
+                        printf(FRED "You had a bet before, wait for next week games\n" RESET);
                         break;
                     }
                 }
-                else {
-                    printf(FRED "You had a bet before, wait for next week games\n" RESET);
-                    break;
-                }
             }
         }
+        else
+            printf(FRED "Your team does not participated in league" RESET);
         printf("\nback? press enter!\n");
         char userinput[10];
         gets(userinput);
@@ -974,6 +1006,8 @@ void upcomingOpponent() {
             normalUserLanding();
             break;
         }
+        
+
     }
 
 }
@@ -1012,7 +1046,7 @@ void changePassword() {
     fclose(file);
     fclose(temp);
     remove("temp.txt");
-    printf("Your password successfully changed.\nYou automatically turn into menu in 3 seconds\n");
+    printf(FGREEN "Your password successfully changed.\nYou automatically turn into menu in 3 seconds\n" RESET);
     loading();
     normalUserLanding();
 }
@@ -1085,6 +1119,8 @@ void startLeague() {
         }
         else {
             printf("Not enough teams for start a league...\n");
+            fclose(config);
+            fclose(file);
         }
         printf("back? press enter\n");
         char userinput[10];
@@ -1223,8 +1259,8 @@ void playGamesOfWeeks() {
     int arr1[5] = { team1.choosenPlayers[0].id, team1.choosenPlayers[1].id,team1.choosenPlayers[2].id,team1.choosenPlayers[3].id,team1.choosenPlayers[4].id };
     int arr2[5] = { team2.choosenPlayers[0].id, team2.choosenPlayers[1].id,team2.choosenPlayers[2].id,team2.choosenPlayers[3].id,team2.choosenPlayers[4].id };
     printf("%s VS %s ---> Winner: %s\n",team1.name,team2.name,myweeks->week[whichWeekShouldPlaye - 1].winner);
-    //strcpy(team1.status, "Unready");
-    //strcpy(team2.status, "Unready");
+    strcpy(team1.status, "Unready");
+    strcpy(team2.status, "Unready");
     for (int i = 0; i < 5; i++)
     {
         myweeks->week[whichWeekShouldPlaye - 1].firsteam.choosenPlayers[i].attack -= 5;
@@ -1289,13 +1325,14 @@ void loading() {
     Sleep(1000);
 }
 void resetCache() {
-    remove("teams.txt");
-    remove("players.txt");
-    remove("teamcounter.txt");
-    remove("playercounter.txt");
-    remove("config.txt");
+    fileRemover("teams.txt");
+    fileRemover("players.txt");
+    fileRemover("teamcounter.txt");
+    fileRemover("playercounter.txt");
     remove("league.txt");
+    remove("config.txt");
     waiter();
+    printf(FGREEN "Done!" RESET);
     printf("You logged out in 3 seconds\n");
     loading();
     mainPageLanding();
@@ -1379,6 +1416,11 @@ void powerReducer(int arr[5]) {
         myplayer.attack -= 5; myplayer.defenece -= 5;
         playerFileUpdater(myplayer, objectCounter("playercounter.txt"));
     }
+}
+void fileRemover(char name[50]) {
+    FILE* file;
+    file = fopen(name, "wb+");
+    fclose(file);
 }
 void fileOpener(char FileName[30]) {
     FILE* file;
@@ -1545,6 +1587,7 @@ int usernameUniqueChecker(char string[high_limit], team team) {
         if (strcmp(team.name, string) == 0)
             calcCounter++;
     }
+    fclose(file);
     if (calcCounter == 1) {
         return False;
     }
@@ -1562,6 +1605,7 @@ int emailUniqueChecker(char string[high_limit], team team) {
         if (strcmp(team.teamleader.email, string) == 0)
             calcCounter++;
     }
+    fclose(file);
     if (calcCounter == 1) {
         return False;
     }
@@ -1603,7 +1647,9 @@ int objectCounter(char fileName[20]) {
     FILE* file;
     file = fopen(fileName, "rb");
     fseek(file, 0, SEEK_END);
-    return ftell(file);
+    int k = ftell(file);
+    fclose(file);
+    return k;
 }
 int random(int arr[],int lenArr) {
     srand(time(NULL));
@@ -1650,6 +1696,7 @@ player playerFinder(int id) {
     {
         fread(&myplayer, sizeof(myplayer), 1, file);
         if (myplayer.id == id) {
+            fclose(file);
             return myplayer;
         }
     }
@@ -1663,6 +1710,7 @@ team teamFinder(int id) {
     {
         fread(&myteam, sizeof(myteam), 1, file);
         if (myteam.id == id) {
+            fclose(file);
             return myteam;
         }
     }
