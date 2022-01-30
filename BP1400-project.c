@@ -71,11 +71,12 @@ struct team
 
 struct leagueStatus {
     int week;
+    int transfer;
     char leagueStatus[10];
     char button[50];
     int participatedTeamId[4];
 
-} deffault = { 0, "inactive", "Start League"};
+} deffault = { 0, 1, "inactive", "Start League"};
 
 struct competition {
     char winner[high_limit];
@@ -117,6 +118,7 @@ void showScoreBoard();
 void changePassword();
 void mainPageLanding();
 void leagueConductor();
+void transformWindow();
 void adminPageLanding();
 void resetLeagueCache();
 void upcomingOpponent();
@@ -539,56 +541,111 @@ void adminPageLanding() {
     else if (config.week == 11 || config.week == 12) { strcpy(button, "Start Week 6"); }
     else if (config.week == 13) { strcpy(button, "End Season and Announce The Champion"); }
     else { strcpy(button, "Start League"); }
-    printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Log out\n7. Reset cache\n",button);
-    while (1) {
-        scanf("%d", &userInput);
-        if (userInput == 1) {
-            addTeam();
-            break;
+    if (config.week == 7 || config.week == 8) {
+        printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Open/Close Transfer Window\n7. Log out\n8. Reset cache\n", button);
+    }
+    else {
+        printf("Choose an option by typing its number:\n1. Add team\n2. add player\n3. show teams\n4. show players\n5. %s\n6. Log out\n7. Reset cache\n", button);
+    }
+    if (config.week == 7 || config.week == 8) {
+        while (1) {
+            scanf("%d", &userInput);
+            if (userInput == 1) {
+                addTeam();
+                break;
+            }
+            else if (userInput == 2) {
+                addPlayer();
+                break;
+            }
+            else if (userInput == 3) {
+                showTeams();
+                break;
+            }
+            else if (userInput == 4) {
+                showPlayers();
+                break;
+            }
+            else if (userInput == 5) {
+                itemFive();
+                break;
+            }
+            else if (userInput == 6) {
+                transformWindow();
+                break;
+            }
+            else if (userInput == 7) {
+                mainPageLanding();
+                break;
+            }
+            else if (userInput == 8) {
+                resetCache();
+                break;
+            }
+            else {
+                printf("Not valid input, try again...\n");
+            }
         }
-        else if (userInput == 2) {
-            addPlayer();
-            break;
-        }
-        else if (userInput == 3) {
-            showTeams();
-            break;
-        }
-        else if (userInput == 4) {
-            showPlayers();
-            break;
-        }
-        else if (userInput == 5) {
-            itemFive();
-            break;
-        }
-        else if (userInput == 6) {
-            mainPageLanding();
-            break;
-        }
-        else if (userInput == 7) {
-            resetCache();
-            break;
-        }
-        else {
-            printf("Not valid input, try again...\n");
+    }
+    else {
+        while (1) {
+            scanf("%d", &userInput);
+            if (userInput == 1) {
+                addTeam();
+                break;
+            }
+            else if (userInput == 2) {
+                addPlayer();
+                break;
+            }
+            else if (userInput == 3) {
+                showTeams();
+                break;
+            }
+            else if (userInput == 4) {
+                showPlayers();
+                break;
+            }
+            else if (userInput == 5) {
+                itemFive();
+                break;
+            }
+            else if (userInput == 6) {
+                mainPageLanding();
+                break;
+            }
+            else if (userInput == 7) {
+                resetCache();
+                break;
+            }
+            else {
+                printf("Not valid input, try again...\n");
+            }
         }
     }
 }
 void buyPlayer() {
+    lStatus config = configReader();
     while (True) {
         lStatus config = configReader();
-        if (config.week == 8 || config.week == 0) {
+        if (config.transfer == 1) {
             clearScreen();
             FILE* players, * teams, * temp;
             int count = objectCounter("playercounter.txt");
             players = fopen("players.txt", "rb");
             player myplayer = def_val;
             team myteam = deffault_value;
-            printf("These players are Free-agent and you can buy them:\n---------------\n");
+            player arrid[100];
             for (int i = 0; i < count; i++)
             {
                 fread(&myplayer, sizeof(myplayer), 1, players);
+                arrid[i] = myplayer;
+            }
+            structSorter(arrid, count);
+            printf("These players are Free-agent and you can buy them:\n---------------\n");
+            for (int i = 0; i < count; i++)
+            {
+                myplayer = arrid[i];
                 if (strcmp(myplayer.team, "Free-Agent") == 0) {
                     printf("ID: %d | Name: %s | Deffence power: %d | Attack power: %d | Value: %d | Team: %s\n", myplayer.id, myplayer.name, myplayer.defenece, myplayer.attack, myplayer.value, myplayer.team);
                     printf("---------------\n");
@@ -644,9 +701,10 @@ void buyPlayer() {
     }
 }
 void sellPlayer() {
+    lStatus config = configReader();
     while (True) {
         lStatus config = configReader();
-        if (config.week == 8 || config.week == 0) {
+        if (config.transfer == 1) {
             printf("You have these choices to sell:\n-------------\n");
             FILE* players, * teams;
             team myteam = deffault_value;
@@ -797,7 +855,7 @@ void fixtures() {
             }
         }
         else {
-            printf("League doesnt started yet...\n");
+            printf(FRED "League doesnt started yet...\n" RESET);
         }
         printf("\nback? press enter!\n");
         char userinput[10];
@@ -810,32 +868,49 @@ void fixtures() {
 
 }
 void upcomingOpponent() {
-    lStatus config = configReader();
-    weeks *myweek = malloc(sizeof(weeks));
-    *myweek = weeksReader();
-    team myteam = deffault_value;
-    int k = 0;
-    int teamSelector = 0;
-    for (int i = config.week - 1; i < 12; i++)
-    {
-        if (myweek->week[i].firsteam.id == loginedTeamID) {
-            k = i;
-            teamSelector = 2;
+    while (True) {
+        lStatus config = configReader();
+        weeks* myweek = malloc(sizeof(weeks));
+        *myweek = weeksReader();
+        team myteam = deffault_value;
+        int k = 0;
+        int teamSelector = 0;
+        if (config.week == 0) {
+            printf(FRED "League doesnt started yet...\n" RESET);
+            loading();
+            normalUserLanding();
             break;
         }
-        else if (myweek->week[i].secondteam.id == loginedTeamID) {
-            k = i;
-            teamSelector = 1;
+        else {
+            for (int i = config.week - 1; i < 12; i++)
+            {
+                if (myweek->week[i].firsteam.id == loginedTeamID) {
+                    k = i;
+                    teamSelector = 2;
+                    break;
+                }
+                else if (myweek->week[i].secondteam.id == loginedTeamID) {
+                    k = i;
+                    teamSelector = 1;
+                    break;
+                }
+            }
+            if (teamSelector == 1) {
+                myteam = teamFinder(myweek->week[k].firsteam.id);
+            }
+            else if (teamSelector == 2) {
+                myteam = teamFinder(myweek->week[k].secondteam.id);
+            }
+            printf("Name: %s\n", myteam.name);
+        }
+        printf("\nback? press enter!\n");
+        char userinput[10];
+        gets(userinput);
+        if (getchar() == '\n') {
+            normalUserLanding();
             break;
         }
     }
-    if (teamSelector == 1) {
-        myteam = teamFinder(myweek->week[k].firsteam.id);
-    }
-    else if (teamSelector == 2) {
-        myteam = teamFinder(myweek->week[k].secondteam.id);
-    }
-    printf("Name: %s\n", myteam.name);
 
 }
 void changePassword() {
@@ -896,7 +971,7 @@ void startLeague() {
         for (int i = 0; i < count; i++)
         {
             fread(&myteam, sizeof(team), 1, file);
-            if (myteam.memberNumber == 8) { // changed data
+            if (myteam.memberNumber == 8 && strcmp(myteam.status,"Ready") == 0) { // changed data
                 teamIDs[replace] = myteam.id;
                 replace++;
             }
@@ -936,7 +1011,7 @@ void startLeague() {
                 teamFileUpdater(myteam, objectCounter("teamcounter.txt"));
                 league->participatedTeamId[i] = myteam.id;
             }
-
+            league->transfer = 0;
             clearScreen();
             configFileUpdater(*league);
             fclose(config);
@@ -1084,8 +1159,8 @@ void playGamesOfWeeks() {
     int arr1[5] = { team1.choosenPlayers[0].id, team1.choosenPlayers[1].id,team1.choosenPlayers[2].id,team1.choosenPlayers[3].id,team1.choosenPlayers[4].id };
     int arr2[5] = { team2.choosenPlayers[0].id, team2.choosenPlayers[1].id,team2.choosenPlayers[2].id,team2.choosenPlayers[3].id,team2.choosenPlayers[4].id };
     printf("%s VS %s ---> Winner: %s\n",team1.name,team2.name,myweeks->week[whichWeekShouldPlaye - 1].winner);
-    strcpy(team1.status, "Unready");
-    strcpy(team2.status, "Unready");
+    //strcpy(team1.status, "Unready");
+    //strcpy(team2.status, "Unready");
     for (int i = 0; i < 5; i++)
     {
         myweeks->week[whichWeekShouldPlaye - 1].firsteam.choosenPlayers[i].attack -= 5;
@@ -1108,6 +1183,7 @@ void playGamesOfWeeks() {
     teamFileUpdater(team2, objectCounter("teamcounter.txt"));
     weekFileUpdater(whichWeekShouldPlaye - 1, myweeks->week[whichWeekShouldPlaye - 1]);
     config.week++;
+    config.transfer = 0;
     configFileUpdater(config);
 
 }
@@ -1161,6 +1237,36 @@ void resetCache() {
 }
 void clearScreen() {
     system("cls");
+}
+void transformWindow() {
+    lStatus config = deffault;
+    config = configReader();
+    printf("1. Close\n2. Open\n");
+    char vrd[5];
+    while (True) {
+        scanf("%s", vrd);
+        if (strcmp(vrd, "1") == 0) {
+            config.transfer = 0;
+            configFileUpdater(config);
+            waiter();
+            printf(FGREEN "Done!\nReturning back to panel...\n" RESET);
+            Sleep(3000);
+            adminPageLanding();
+            break;
+        }
+        else if (strcmp(vrd, "2") == 0) {
+            config.transfer = 1;
+            configFileUpdater(config);
+            waiter();
+            printf(FGREEN "Done!\nReturning back to panel...\n" RESET);
+            Sleep(3000);
+            adminPageLanding();
+            break;
+        }
+        else {
+            printf("Not valid input...\n");
+        }
+    }
 }
 void encode(char *str) {
     int i = 0;
@@ -1228,7 +1334,7 @@ void arrayPrinter(int arr[], int len) {
         printf("%d\n", arr[i]);
     }
 }
-void structSorter(player list[8], int s)
+void structSorter(player list[200], int s)
 {
     int i, j;
     player temp;
@@ -1237,7 +1343,7 @@ void structSorter(player list[8], int s)
     {
         for (j = 0; j < (s - 1 - i); j++)
         {
-            if (list[j].id < list[j + 1].id)
+            if (list[j].value < list[j + 1].value)
             {
                 temp = list[j];
                 list[j] = list[j + 1];
