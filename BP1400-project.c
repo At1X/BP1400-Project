@@ -196,38 +196,38 @@ void normalUserLanding() {
     clearScreen();
     printf("%s - Wallet: %d$\n", myteam.name, myteam.budget);
     printf("Choose an option:\n1. Buy player\n2. Sell player\n3. Select team/submit team\n4. Show scoreboard\n5. Fixtures\n6. Upcoming opponent\n7. Change password\n8. Exit\n");
-    int userInput = 0;
+    char userInput[10];
     while (True) {
-        scanf("%d", &userInput);
-        if (userInput == 1) {
+        scanf("%s",userInput);
+        if (strcmp(userInput, "1") == 0) {
             buyPlayer();
             break;
         }
-        else if (userInput == 2) {
+        else if (strcmp(userInput, "2") == 0) {
             sellPlayer();
             break;
         }
-        else if (userInput == 3) {
+        else if (strcmp(userInput, "3") == 0) {
             selectTeam();
             break;
         }
-        else if (userInput == 4) {
+        else if (strcmp(userInput, "4") == 0) {
             showScoreBoard();
             break;
         }
-        else if (userInput == 5) {
+        else if (strcmp(userInput, "5") == 0) {
             fixtures();
             break;
         }
-        else if (userInput == 6) {
+        else if (strcmp(userInput, "6") == 0) {
             upcomingOpponent();
             break;
         }
-        else if (userInput == 7) {
+        else if (strcmp(userInput, "7") == 0) {
             changePassword();
             break;
         }
-        else if (userInput == 8) {
+        else if (strcmp(userInput, "8") == 0) {
             mainPageLanding();
             break;
         }
@@ -559,7 +559,7 @@ void mainPageLanding() {
 }
 void adminPageLanding() {
     clearScreen();
-    int userInput = 0;
+    char userInput[10];
     char button[100];
     lStatus config = configReader();
     if (config.week == 0) { strcpy(button, "Start League"); }
@@ -579,36 +579,36 @@ void adminPageLanding() {
     }
     if (config.week == 7 || config.week == 8) {
         while (1) {
-            scanf("%d", &userInput);
-            if (userInput == 1) {
+            scanf("%s",userInput);
+            if (strcmp(userInput, "1") == 0) {
                 addTeam();
                 break;
             }
-            else if (userInput == 2) {
+            else if (strcmp(userInput, "2") == 0) {
                 addPlayer();
                 break;
             }
-            else if (userInput == 3) {
+            else if (strcmp(userInput, "3") == 0) {
                 showTeams();
                 break;
             }
-            else if (userInput == 4) {
+            else if (strcmp(userInput, "4") == 0) {
                 showPlayers();
                 break;
             }
-            else if (userInput == 5) {
+            else if (strcmp(userInput, "5") == 0) {
                 itemFive();
                 break;
             }
-            else if (userInput == 6) {
+            else if (strcmp(userInput, "6") == 0) {
                 transformWindow();
                 break;
             }
-            else if (userInput == 7) {
+            else if (strcmp(userInput, "7") == 0) {
                 mainPageLanding();
                 break;
             }
-            else if (userInput == 8) {
+            else if (strcmp(userInput, "8") == 0) {
                 resetCache();
                 break;
             }
@@ -619,32 +619,32 @@ void adminPageLanding() {
     }
     else {
         while (1) {
-            scanf("%d", &userInput);
-            if (userInput == 1) {
+            scanf("%s",userInput);
+            if (strcmp(userInput, "1") == 0) {
                 addTeam();
                 break;
             }
-            else if (userInput == 2) {
+            else if (strcmp(userInput, "2") == 0) {
                 addPlayer();
                 break;
             }
-            else if (userInput == 3) {
+            else if (strcmp(userInput, "3") == 0) {
                 showTeams();
                 break;
             }
-            else if (userInput == 4) {
+            else if (strcmp(userInput, "4") == 0) {
                 showPlayers();
                 break;
             }
-            else if (userInput == 5) {
+            else if (strcmp(userInput, "5") == 0) {
                 itemFive();
                 break;
             }
-            else if (userInput == 6) {
+            else if (strcmp(userInput, "6") == 0) {
                 mainPageLanding();
                 break;
             }
-            else if (userInput == 7) {
+            else if (strcmp(userInput, "7") == 0) {
                 resetCache();
                 break;
             }
